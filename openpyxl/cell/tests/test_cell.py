@@ -427,6 +427,26 @@ class TestMergedCell:
         assert cell.hyperlink is None
 
 
+def test_cell_metadata_index(dummy_cell):
+    """Test cell metadata index property for dynamic arrays"""
+    cell = dummy_cell
+    # Default should be None
+    assert cell.cell_metadata_index is None
+    assert cell._cell_metadata_index is None
+
+    # Can set to integer
+    cell.cell_metadata_index = 0
+    assert cell.cell_metadata_index == 0
+
+    # Can set to None
+    cell.cell_metadata_index = None
+    assert cell.cell_metadata_index is None
+
+    # String is converted to int
+    cell.cell_metadata_index = "1"
+    assert cell.cell_metadata_index == 1
+
+
 @pytest.mark.numpy_required
 def test_write_numpy_to_cell(dummy_cell):
     import numpy

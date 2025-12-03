@@ -1,6 +1,28 @@
 # WOTAN Test Files
 
-Test files for modern Excel features. These files must be created in Excel 365/2021+.
+Test files for modern Excel features.
+
+> **⚠️ UNTESTED**: The test files in this directory have NOT been validated against
+> real Excel 365 output. They were either generated programmatically or sourced from
+> other open-source libraries. Features like threaded comments, modern charts, slicers,
+> and rich data types cannot be tested without access to Excel 365.
+
+## Creation Status
+
+| Category | Status | Source |
+|----------|--------|--------|
+| Sparklines | ✅ Created | Generated with `create_sparkline_files.py` |
+| Dynamic Arrays | ✅ Found | XlsxWriter test suite (has metadata.xml) |
+| Pivot Tables | ✅ Found | ClosedXML test suite |
+| Threaded Comments | ❌ Missing | Requires Excel 365 (not in any OSS test suite) |
+| Modern Charts | ❌ Missing | Requires Excel 365 (chartex namespace) |
+| Slicers/Timelines | ❌ Missing | Requires Excel with PivotTable + Slicer |
+| Rich Data | ❌ Missing | Requires Excel 365 with Stock/Geography types |
+
+## Test File Sources
+
+- **XlsxWriter**: https://github.com/jmcnamara/XlsxWriter (MIT License)
+- **ClosedXML**: https://github.com/ClosedXML/ClosedXML (MIT License)
 
 ## Required Test Files
 

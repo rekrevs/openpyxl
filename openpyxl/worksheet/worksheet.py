@@ -144,6 +144,10 @@ class Worksheet(_WorkbookChild):
         self.scenarios = ScenarioList()
         self.extensions = None  # ExtensionList for round-trip preservation
         self.unknown_elements = {}  # Dict of tag -> element for round-trip preservation
+        self.sparklines = None  # SparklineGroups for sparkline mini-charts
+        self.threaded_comments = None  # ThreadedCommentList for modern threaded comments
+        self.slicers = None  # SlicerList for pivot table/table slicers
+        self.timelines = None  # TimelineList for pivot table date filtering
 
 
     @property

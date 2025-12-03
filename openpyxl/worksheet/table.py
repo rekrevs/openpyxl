@@ -292,6 +292,54 @@ class Table(Serialisable):
         self.tableStyleInfo = tableStyleInfo
 
 
+    @classmethod
+    def from_headers(cls, displayName, ref, headers, style=None, **kw):
+        """
+        Create a table with explicit column headers.
+
+        This convenience constructor creates a Table with properly initialized
+        columns from a list of header names.
+
+        Parameters
+        ----------
+        displayName : str
+            The display name of the table (used in formulas)
+        ref : str
+            The cell range of the table (e.g., "A1:D10")
+        headers : list
+            List of column header names
+        style : str, optional
+            Name of table style (e.g., "TableStyleMedium9")
+        **kw : dict
+            Additional keyword arguments passed to Table.__init__
+
+        Returns
+        -------
+        Table
+            A new Table instance with initialized columns
+
+        Example
+        -------
+        >>> table = Table.from_headers(
+        ...     displayName="SalesData",
+        ...     ref="A1:C10",
+        ...     headers=["Product", "Quantity", "Price"],
+        ...     style="TableStyleMedium9"
+        ... )
+        """
+        table = cls(displayName=displayName, ref=ref, **kw)
+        table._initialise_columns()
+
+        # Set header names from provided list
+        for col, name in zip(table.tableColumns, headers):
+            col.name = name
+
+        if style:
+            table.tableStyleInfo = TableStyleInfo(name=style, showRowStripes=True)
+
+        return table
+
+
     def to_tree(self):
         tree = super().to_tree()
         tree.set("xmlns", SHEET_MAIN_NS)

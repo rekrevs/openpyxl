@@ -362,6 +362,57 @@ class TestTokenizer:
         assert result == tokens
         assert tok.render() == formula
 
+    def test_parse_spilled_range_operator(self, tokenizer):
+        """Test the spilled range operator (A1# syntax) for dynamic arrays."""
+        # Simple spilled range
+        formula = "=SUM(A1#)"
+        tok = tokenizer.Tokenizer(formula)
+        result = [(token.value, token.type, token.subtype)
+                  for token in tok.items]
+        tokens = [
+            ('SUM(', FUNC, OPEN),
+            ('A1#', OPERAND, RANGE),
+            (')', FUNC, CLOSE),
+        ]
+        assert result == tokens
+        assert tok.render() == formula
+
+        # Spilled range in expression
+        formula = "=B1#*2"
+        tok = tokenizer.Tokenizer(formula)
+        result = [(token.value, token.type, token.subtype)
+                  for token in tok.items]
+        tokens = [
+            ('B1#', OPERAND, RANGE),
+            ('*', OP_IN, ''),
+            ('2', OPERAND, NUMBER),
+        ]
+        assert result == tokens
+        assert tok.render() == formula
+
+        # External sheet spilled range
+        formula = "=Sheet1!A1#"
+        tok = tokenizer.Tokenizer(formula)
+        result = [(token.value, token.type, token.subtype)
+                  for token in tok.items]
+        tokens = [
+            ('Sheet1!A1#', OPERAND, RANGE),
+        ]
+        assert result == tokens
+        assert tok.render() == formula
+
+        # Spilled range with sheet reference should not interfere with error codes
+        formula = "=SUM(MyTable!#REF!)"
+        tok = tokenizer.Tokenizer(formula)
+        result = [(token.value, token.type, token.subtype)
+                  for token in tok.items]
+        tokens = [
+            ('SUM(', FUNC, OPEN),
+            ('MyTable!#REF!', OPERAND, RANGE),
+            (')', FUNC, CLOSE),
+        ]
+        assert result == tokens
+
     def test_parse_error_error(self, tokenizer):
         tok = tokenizer.Tokenizer("#NotAnError")
         tok.offset = 0

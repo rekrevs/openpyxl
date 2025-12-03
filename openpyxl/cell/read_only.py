@@ -9,9 +9,9 @@ from openpyxl.styles.numbers import BUILTIN_FORMATS, BUILTIN_FORMATS_MAX_SIZE
 
 class ReadOnlyCell:
 
-    __slots__ =  ('parent', 'row', 'column', '_value', 'data_type', '_style_id')
+    __slots__ =  ('parent', 'row', 'column', '_value', 'data_type', '_style_id', '_cell_metadata_index')
 
-    def __init__(self, sheet, row, column, value, data_type='n', style_id=0):
+    def __init__(self, sheet, row, column, value, data_type='n', style_id=0, cell_metadata_index=None):
         self.parent = sheet
         self._value = None
         self.row = row
@@ -19,6 +19,12 @@ class ReadOnlyCell:
         self.data_type = data_type
         self.value = value
         self._style_id = style_id
+        self._cell_metadata_index = cell_metadata_index
+
+    @property
+    def cell_metadata_index(self):
+        """Index into cell metadata records (for dynamic arrays)."""
+        return self._cell_metadata_index
 
 
     def __eq__(self, other):

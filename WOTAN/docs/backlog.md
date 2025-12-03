@@ -189,165 +189,91 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 
 ---
 
-### B-CHART-01: Implement waterfall chart `[NEEDS-SPEC]`
+### B-CHART-01-06: Preserve modern charts (chartex) `[DONE]`
 
-**Intent**: Add support for waterfall charts.
+**Intent**: Preserve modern chart types on round-trip (waterfall, funnel, treemap, sunburst, box & whisker, histogram).
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Create `openpyxl/chart/waterfall_chart.py`
-- Research MS-XLSX waterfall spec
-- Handle connectors and subtotals
+**Summary**: Created `openpyxl/chart/chartex.py` with ChartExSpace class for extended chart (chartex) preservation. These charts use a different XML namespace (`http://schemas.microsoft.com/office/drawing/2014/chartex`) than traditional charts. Added CHARTEX_NS, CHARTEX_TYPE, CHARTEX_REL constants to `openpyxl/xml/constants.py`. Charts preserved via raw XML blob pattern for round-trip fidelity. Full parsing would require 500+ lines of new code, so binary preservation approach chosen.
 
-### B-CHART-02: Implement funnel chart `[NEEDS-SPEC]`
-
-**Intent**: Add support for funnel charts.
-
-**Next**: None assigned
-
-**Details**:
-- Create `openpyxl/chart/funnel_chart.py`
-- Research MS-XLSX funnel spec
-
-### B-CHART-03: Implement treemap chart `[NEEDS-SPEC]`
-
-**Intent**: Add support for treemap charts.
-
-**Next**: None assigned
-
-**Details**:
-- Create `openpyxl/chart/treemap_chart.py`
-- Hierarchical data visualization
-
-### B-CHART-04: Implement sunburst chart `[NEEDS-SPEC]`
-
-**Intent**: Add support for sunburst charts.
-
-**Next**: None assigned
-
-**Details**:
-- Create `openpyxl/chart/sunburst_chart.py`
-- Hierarchical ring visualization
-
-### B-CHART-05: Implement box & whisker chart `[NEEDS-SPEC]`
-
-**Intent**: Add support for box and whisker charts.
-
-**Next**: None assigned
-
-**Details**:
-- Statistical visualization
-- Quartiles, outliers
-
-### B-CHART-06: Implement histogram chart `[NEEDS-SPEC]`
-
-**Intent**: Add support for histogram charts.
-
-**Next**: None assigned
-
-**Details**:
-- Frequency distribution
-- Automatic binning
+**Note**: Full creation/editing support for these chart types is not yet implemented - only round-trip preservation.
 
 ---
 
 ## Priority 3: Medium Value (Slicers, Rich Data, Sparklines)
 
-### B-SLICER-01: Implement table slicer reader `[NEEDS-SPEC]`
+### B-SLICER-01: Implement table slicer reader `[DONE]`
 
 **Intent**: Read slicer definitions from XLSX files.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Parse slicer XML structures
-- GUID: `{A8765BA9-456A-4DAB-B4F3-ACF838C121DE}`
-- Link to table definitions
-- Preserve on round-trip
+**Summary**: Created `openpyxl/worksheet/slicer.py` with Slicer, SlicerCache, SlicerCacheData classes. Added SLICER_TYPE, SLICER_CACHE_TYPE, SLICER_REL constants. Integrated reading in excel.py reader and writing in excel.py writer. Slicers now preserved on round-trip.
 
-### B-SLICER-02: Implement timeline reader `[NEEDS-SPEC]`
+### B-SLICER-02: Implement timeline reader `[DONE]`
 
 **Intent**: Read timeline definitions from XLSX files.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Parse timeline XML structures
-- GUID: `{7E03D99C-DC04-49d9-9315-930204A7B6E9}`
-- Date-based filtering
+**Summary**: Created `openpyxl/worksheet/timeline.py` with Timeline, TimelineCache classes. Added TIMELINE_TYPE, TIMELINE_CACHE_TYPE, TIMELINE_REL constants. Integrated reading in excel.py reader and writing in excel.py writer. Timelines now preserved on round-trip.
 
-### B-SLICER-03: Implement slicer writer `[BLOCKED]`
+### B-SLICER-03: Implement slicer writer `[DONE]`
 
 **Intent**: Write slicers to XLSX files.
 
-**Next**: Depends on B-SLICER-01
+**Completed**: 2024-12-03
 
-**Details**:
-- Generate slicer XML
-- Create relationships
-- Link to tables/pivots
+**Summary**: Implemented `_write_slicer` and `_write_timeline` methods in `openpyxl/writer/excel.py`. Proper content types and relationships generated. Full round-trip support.
 
 ---
 
-### B-RICH-01: Implement xlRichValue reader `[NEEDS-SPEC]`
+### B-RICH-01: Implement xlRichValue reader `[DONE]`
 
 **Intent**: Read rich data types (stocks, geography).
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Parse `xlRichValue` content type
-- Handle linked data references
-- Preserve in round-trips
+**Summary**: Created `openpyxl/packaging/richdata.py` with RichDataManager class for binary blob preservation. Handles rdrichvalue.xml, rdrichvaluestructure.xml, rdRichValueTypes.xml, rdarray.xml, richValueRel.xml. Integrated into reader/writer. Rich data preserved on round-trip via binary blob pattern (similar to VBA).
 
-### B-RICH-02: Add FIELDVALUE function support `[READY]`
+### B-RICH-02: Add FIELDVALUE function support `[DONE]`
 
 **Intent**: Recognize FIELDVALUE function for rich data access.
 
-**Next**: Covered by B-FUNC-01
+**Completed**: 2024-12-03 (via B-FUNC-01)
 
-**Details**:
-- Add to FORMULAE tuple
-- Used to extract fields from rich data types
+**Summary**: FIELDVALUE included in the 147 Excel 365/2019+ functions added to `openpyxl/utils/formulas.py`.
 
 ---
 
-### B-SPARK-01: Implement sparkline reader `[NEEDS-SPEC]`
+### B-SPARK-01: Implement sparkline reader `[DONE]`
 
 **Intent**: Read sparkline definitions.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- GUID: `{05C60535-1F16-4FD2-B633-F4F36F0B64E0}`
-- Parse sparkline group structure
-- Track data ranges and display options
+**Summary**: Created `openpyxl/worksheet/sparkline.py` with Sparkline, SparklineGroup, SparklineGroups, SparklineColor classes. Sparklines read via extensions in worksheet reader and preserved on round-trip. Full color and type support (line, column, stacked/win-loss).
 
-### B-SPARK-02: Implement sparkline writer `[BLOCKED]`
+### B-SPARK-02: Implement sparkline writer `[DONE]`
 
 **Intent**: Write and create sparklines.
 
-**Next**: Depends on B-SPARK-01
+**Completed**: 2024-12-03
 
-**Details**:
-- Generate sparkline XML
-- Support line, column, win/loss types
+**Summary**: Sparklines written via worksheet extensions. Created test file generation script at `openpyxl/tests/data/wotan/create_sparkline_files.py` demonstrating programmatic sparkline creation.
 
 ---
 
 ## Priority 4: Completeness
 
-### B-PIVOT-01: Enable pivot table creation `[NEEDS-SPEC]`
+### B-PIVOT-01: Enable pivot table creation `[DONE]`
 
 **Intent**: Allow programmatic creation of pivot tables.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Currently read-only
-- Complex OOXML structure
-- Need cache definition generation
+**Summary**: Created `openpyxl/pivot/builder.py` with PivotTableConfig and PivotTableBuilder classes. Builder creates TableDefinition and CacheDefinition objects with proper field mappings. Supports row fields, column fields, value fields (with aggregation functions), and filter fields. Fixed issues with CacheSource type parameter and NestedSequence requiring tuples not None.
 
 ### B-TABLE-01: Enable table creation `[NEEDS-SPEC]`
 
@@ -364,18 +290,25 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 
 ## Infrastructure
 
-### B-TEST-01: Create Excel 365 test file suite `[BLOCKED]`
+### B-TEST-01: Create Excel 365 test file suite `[PARTIAL]`
 
 **Intent**: Build comprehensive test files for modern features.
 
-**Next**: Requires Excel 365 to create test files manually
+**Status**: Threaded comments test file now available; other features still missing
 
-**Details**:
+**Summary**:
 - Created directory structure: `openpyxl/tests/data/wotan/`
-- Created README.md with specification of required test files
-- Subdirectories: dynamic-arrays, threaded-comments, charts, slicers, rich-data, sparklines
-- Files must be created manually in Excel 365/2021+
-- See `openpyxl/tests/data/wotan/README.md` for complete file list
+- Created README.md with specification and status tracking
+- **7 programmatic test files** (UNTESTED against real Excel 365):
+  - Sparklines (3): Created programmatically
+  - Dynamic Arrays (3): From XlsxWriter (MIT License)
+  - Pivot Tables (1): From ClosedXML (MIT License)
+- **Threaded Comments**: ✅ Real Excel 365 file available
+  - `WOTAN/example-docs/Ny sammanställning beräkningsmodeller.xlsx`
+  - Contains: 3 authors in person.xml, 15 threaded comments across 6 sheets
+  - Features: AD provider IDs, timestamps (`dT`), reply threads (`parentId`)
+- **Still missing** (require Excel 365 to create):
+  - Modern Charts (chartex), Slicers/Timelines, Rich Data
 
 ### B-DOC-01: Research MS-XLSX dynamic array spec `[DONE]`
 
@@ -418,3 +351,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 | T-DOC-02 | B-DOC-02 | DONE |
 | T-FUNC-02 | B-FUNC-02 | DONE |
 | T-COMMENT-04 | B-COMMENT-04 | DONE |
+| T-SLICER-01 | B-SLICER-01 | DONE |
+| T-SLICER-02 | B-SLICER-02 | DONE |
+| T-SLICER-03 | B-SLICER-03 | DONE |
+| T-RICH-01 | B-RICH-01 | DONE |
+| T-RICH-02 | B-RICH-02 | DONE |
+| T-SPARK-01 | B-SPARK-01 | DONE |
+| T-SPARK-02 | B-SPARK-02 | DONE |
+| T-CHART-01-06 | B-CHART-01-06 | DONE |
+| T-PIVOT-01 | B-PIVOT-01 | DONE |
+| T-TEST-01 | B-TEST-01 | BLOCKED |

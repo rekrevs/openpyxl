@@ -31,9 +31,17 @@ from openpyxl.xml.constants import (
     XLTX,
     XLSM,
     XLSX,
+    THREADEDCOMMENTS_REL,
+    PERSONS_TYPE,
+    SLICER_REL,
+    TIMELINE_REL,
 )
 from openpyxl.cell import MergedCell
 from openpyxl.comments.comment_sheet import CommentSheet
+from openpyxl.comments.person import PersonList
+from openpyxl.comments.threaded import ThreadedCommentList
+from openpyxl.worksheet.slicer import SlicerList
+from openpyxl.worksheet.timeline import TimelineList
 
 from .strings import read_string_table, read_rich_text
 from .workbook import WorkbookParser
@@ -187,6 +195,26 @@ class ExcelReader:
             self.wb.loaded_theme = self.archive.read(ARC_THEME)
 
 
+    def read_persons(self):
+        """Read persons list for threaded comments (if present)"""
+        person_part = self.package.find(PERSONS_TYPE)
+        if person_part is not None:
+            person_path = person_part.PartName[1:]  # Remove leading /
+            if person_path in self.valid_files:
+                src = self.archive.read(person_path)
+                self.wb.persons = PersonList.from_tree(fromstring(src))
+
+
+    def read_rich_data(self):
+        """Read rich data files (stocks, geography) if present"""
+        from openpyxl.packaging.richdata import RichDataManager
+
+        manager = RichDataManager()
+        manager.read(self.archive, self.valid_files)
+        if manager:
+            self.wb.rich_data = manager
+
+
     def read_chartsheet(self, sheet, rel):
         sheet_path = rel.target
         rels_path = get_rels_path(sheet_path)
@@ -250,6 +278,21 @@ class ExcelReader:
                             warnings.warn(comment_warning.format(ws.title, c.coordinate))
                             continue
 
+            # read threaded comments (modern comments from Excel 2019+)
+            for r in rels.find(THREADEDCOMMENTS_REL):
+                src = self.archive.read(r.target)
+                ws.threaded_comments = ThreadedCommentList.from_tree(fromstring(src))
+
+            # read slicers (Excel 2010+ interactive filters)
+            for r in rels.find(SLICER_REL):
+                src = self.archive.read(r.target)
+                ws.slicers = SlicerList.from_tree(fromstring(src))
+
+            # read timelines (Excel 2013+ date filtering)
+            for r in rels.find(TIMELINE_REL):
+                src = self.archive.read(r.target)
+                ws.timelines = TimelineList.from_tree(fromstring(src))
+
             # preserve link to VML file if VBA
             if self.wb.vba_archive and ws.legacy_drawing:
                 ws.legacy_drawing = rels.get(ws.legacy_drawing).target
@@ -297,6 +340,10 @@ class ExcelReader:
             self.read_custom()
             action = "read theme"
             self.read_theme()
+            action = "read persons"
+            self.read_persons()
+            action = "read rich data"
+            self.read_rich_data()
             action = "read stylesheet"
             apply_stylesheet(self.archive, self.wb)
             action = "read worksheets"

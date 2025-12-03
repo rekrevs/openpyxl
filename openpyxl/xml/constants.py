@@ -76,6 +76,14 @@ CHART_DRAWING_NS = "http://schemas.openxmlformats.org/drawingml/2006/chartDrawin
 
 CUSTOMUI_NS = 'http://schemas.microsoft.com/office/2006/relationships/ui/extensibility'
 
+# Threaded comments (x14 2009 and later namespaces)
+X14_NS = "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"
+XLTHREADED_NS = "http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments"
+XLPERSON_NS = "http://schemas.microsoft.com/office/spreadsheetml/2017/revision16"
+
+# Threaded comments relationship types
+THREADEDCOMMENTS_REL = "http://schemas.microsoft.com/office/2017/10/relationships/threadedComment"
+PERSONS_REL = "http://schemas.microsoft.com/office/2017/10/relationships/person"
 
 NAMESPACES = {
     'cp': COREPROPS_NS,
@@ -105,6 +113,31 @@ CHARTSHAPE_TYPE = "application/vnd.openxmlformats-officedocument.drawingml.chart
 THEME_TYPE = "application/vnd.openxmlformats-officedocument.theme+xml"
 METADATA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml"
 CPROPS_TYPE = "application/vnd.openxmlformats-officedocument.custom-properties+xml"
+
+# Threaded comments content types
+THREADEDCOMMENTS_TYPE = "application/vnd.ms-excel.threadedcomments+xml"
+PERSONS_TYPE = "application/vnd.ms-excel.person+xml"
+
+# Slicer/Timeline namespaces (x14 = 2009, x15 = 2010)
+X15_NS = "http://schemas.microsoft.com/office/spreadsheetml/2010/11/main"
+
+# Slicer content types and relationships
+SLICER_TYPE = "application/vnd.ms-excel.slicer+xml"
+SLICER_CACHE_TYPE = "application/vnd.ms-excel.slicerCache+xml"
+SLICER_REL = "http://schemas.microsoft.com/office/2007/relationships/slicer"
+SLICER_CACHE_REL = "http://schemas.microsoft.com/office/2007/relationships/slicerCache"
+
+# Timeline content types and relationships
+TIMELINE_TYPE = "application/vnd.ms-excel.timeline+xml"
+TIMELINE_CACHE_TYPE = "application/vnd.ms-excel.timelineCache+xml"
+TIMELINE_REL = "http://schemas.microsoft.com/office/2011/relationships/timeline"
+TIMELINE_CACHE_REL = "http://schemas.microsoft.com/office/2011/relationships/timelineCache"
+
+# Extended chart (chartex) namespace, content types, and relationships
+CHARTEX_NS = "http://schemas.microsoft.com/office/drawing/2014/chartex"
+CHARTEX_TYPE = "application/vnd.ms-office.chartex+xml"
+CHARTEX_REL = "http://schemas.microsoft.com/office/2014/relationships/chartEx"
+
 XLTM = WORKBOOK_MACRO % 'template'
 XLSM = WORKBOOK_MACRO % 'sheet'
 XLTX = WORKBOOK % 'template'

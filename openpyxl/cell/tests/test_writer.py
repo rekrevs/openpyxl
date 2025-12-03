@@ -282,3 +282,27 @@ def test_rich_text(worksheet, write_cell_implementation):
     xml = out.getvalue()
     diff = compare_xml(xml, expected)
     assert diff is None, diff
+
+
+@pytest.mark.parametrize("write_cell", ['etree', 'lxml'])
+def test_cell_metadata_index(write_cell, worksheet, request):
+    """Test that cell metadata index (cm attribute) is written correctly"""
+    if write_cell == 'lxml':
+        if not LXML:
+            pytest.skip("lxml not available")
+        from .._writer import lxml_write_cell as write_cell_func
+    else:
+        from .._writer import etree_write_cell as write_cell_func
+
+    cell = worksheet['A1']
+    cell.value = 42
+    cell._cell_metadata_index = 0
+
+    out = BytesIO()
+    with xmlfile(out) as xf:
+        write_cell_func(xf, worksheet, cell)
+
+    xml = out.getvalue()
+    expected = """<c t="n" r="A1" cm="0"><v>42</v></c>"""
+    diff = compare_xml(xml, expected)
+    assert diff is None, diff

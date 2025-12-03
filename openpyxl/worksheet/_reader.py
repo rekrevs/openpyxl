@@ -45,6 +45,7 @@ from .table import TablePartList
 from .properties import WorksheetProperties
 from .dimensions import SheetDimension
 from .related import Related
+from .sparkline import SparklineGroups, SPARKLINE_GUID, X14_NS
 
 
 CELL_TAG = '{%s}c' % SHEET_MAIN_NS
@@ -149,6 +150,7 @@ class WorkSheetParser:
         self.rich_text = rich_text
         self.extensions = None  # ExtensionList for round-trip preservation
         self.unknown_elements = {}  # Dict of tag -> element for round-trip preservation
+        self.sparklines = None  # SparklineGroups for sparkline mini-charts
 
 
     def parse(self):
@@ -226,6 +228,9 @@ class WorkSheetParser:
         style_id = element.get('s', 0)
         if style_id:
             style_id = int(style_id)
+        cell_metadata_index = element.get('cm')
+        if cell_metadata_index is not None:
+            cell_metadata_index = int(cell_metadata_index)
 
         if data_type == "inlineStr":
             value = None
@@ -275,7 +280,7 @@ class WorkSheetParser:
                     else:
                         value = Text.from_tree(child).content
 
-        return {'row':row, 'column':column, 'value':value, 'data_type':data_type, 'style_id':style_id}
+        return {'row':row, 'column':column, 'value':value, 'data_type':data_type, 'style_id':style_id, 'cell_metadata_index':cell_metadata_index}
 
 
     def parse_formula(self, element):
@@ -356,11 +361,19 @@ class WorkSheetParser:
 
 
     def parse_extensions(self, element):
+        from openpyxl.xml.functions import localname
         extLst = ExtensionList.from_tree(element)
         for e in extLst.ext:
             ext_type = EXT_TYPES.get(e.uri.upper(), "Unknown")
-            msg = "{0} extension is not supported but will be preserved".format(ext_type)
-            warn(msg)
+            # Parse sparklines from extension content
+            if e.uri.upper() == SPARKLINE_GUID.upper() and e._content is not None:
+                for child in e._content:
+                    if localname(child) == "sparklineGroups":
+                        self.sparklines = SparklineGroups.from_tree(child)
+                        break
+            else:
+                msg = "{0} extension is not supported but will be preserved".format(ext_type)
+                warn(msg)
         # Store for round-trip preservation
         self.extensions = extLst
 
@@ -407,6 +420,8 @@ class WorksheetReader:
                 c = Cell(self.ws, row=cell['row'], column=cell['column'], style_array=style)
                 c._value = cell['value']
                 c.data_type = cell['data_type']
+                if cell['cell_metadata_index'] is not None:
+                    c._cell_metadata_index = cell['cell_metadata_index']
                 self.ws._cells[(cell['row'], cell['column'])] = c
 
         if self.ws._cells:
@@ -490,7 +505,7 @@ class WorksheetReader:
                   'HeaderFooter', 'auto_filter', 'data_validations',
                   'sheet_properties', 'views', 'sheet_format',
                   'row_breaks', 'col_breaks', 'scenarios', 'legacy_drawing',
-                  'protection', 'extensions', 'unknown_elements',
+                  'protection', 'extensions', 'unknown_elements', 'sparklines',
                   ):
             v = getattr(self.parser, k, None)
             if v is not None:

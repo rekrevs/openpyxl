@@ -291,3 +291,79 @@ class TestExpectedTypes:
         node = fromstring(xml)
         obj = ExpectedTypes.from_tree(node)
         assert obj.value == "1"
+
+
+class TestPreserveUnknown:
+    """Test the _preserve_unknown feature for round-trip fidelity"""
+
+    def test_preserve_unknown_children(self, Serialisable):
+        """Unknown children should be preserved when _preserve_unknown is True"""
+        from openpyxl.descriptors import String
+
+        class PreservingClass(Serialisable):
+            tagname = "preserving"
+            _preserve_unknown = True
+
+            name = String(allow_none=True)
+            __attrs__ = ('name',)
+            __elements__ = ()
+
+            def __init__(self, name=None):
+                self.name = name
+
+        # XML with unknown child elements
+        xml = """
+        <preserving name="test">
+            <unknown_child attr="value">content</unknown_child>
+            <another_unknown>more content</another_unknown>
+        </preserving>
+        """
+        node = fromstring(xml)
+        obj = PreservingClass.from_tree(node)
+
+        # Known attribute should be parsed
+        assert obj.name == "test"
+
+        # Unknown children should be preserved
+        assert hasattr(obj, '_unknown_children')
+        assert len(obj._unknown_children) == 2
+
+        # Round-trip should preserve unknown children
+        tree = obj.to_tree()
+        result_xml = tostring(tree)
+
+        # Verify unknown children are in output
+        assert b"unknown_child" in result_xml
+        assert b"another_unknown" in result_xml
+        assert b'attr="value"' in result_xml
+
+    def test_no_preserve_by_default(self, Serialisable):
+        """Unknown children should NOT be preserved by default"""
+        from openpyxl.descriptors import String
+
+        class NonPreservingClass(Serialisable):
+            tagname = "nonpreserving"
+            # _preserve_unknown defaults to False
+
+            name = String(allow_none=True)
+            __attrs__ = ('name',)
+            __elements__ = ()
+
+            def __init__(self, name=None):
+                self.name = name
+
+        xml = """
+        <nonpreserving name="test">
+            <unknown_child>content</unknown_child>
+        </nonpreserving>
+        """
+        node = fromstring(xml)
+        obj = NonPreservingClass.from_tree(node)
+
+        # Unknown children should NOT be preserved
+        assert not hasattr(obj, '_unknown_children') or obj._unknown_children == []
+
+        # Round-trip should NOT include unknown children
+        tree = obj.to_tree()
+        result_xml = tostring(tree)
+        assert b"unknown_child" not in result_xml

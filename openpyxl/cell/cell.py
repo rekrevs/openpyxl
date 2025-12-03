@@ -103,6 +103,7 @@ class Cell(StyleableObject):
         'parent',
         '_hyperlink',
         '_comment',
+        '_cell_metadata_index',
                  )
 
     def __init__(self, worksheet, row=None, column=None, value=None, style_array=None):
@@ -118,6 +119,7 @@ class Cell(StyleableObject):
         if value is not None:
             self.value = value
         self._comment = None
+        self._cell_metadata_index = None
 
 
     @property
@@ -295,6 +297,26 @@ class Cell(StyleableObject):
         elif value is None and self._comment:
             self._comment.unbind()
         self._comment = value
+
+
+    @property
+    def cell_metadata_index(self):
+        """Index into cell metadata records (for dynamic arrays).
+
+        This corresponds to the 'cm' attribute on cell elements in XLSX.
+        A non-None value indicates this cell is part of a dynamic array.
+
+        :type: int or None
+        """
+        return self._cell_metadata_index
+
+
+    @cell_metadata_index.setter
+    def cell_metadata_index(self, value):
+        """Set the cell metadata index."""
+        if value is not None:
+            value = int(value)
+        self._cell_metadata_index = value
 
 
 class MergedCell(StyleableObject):

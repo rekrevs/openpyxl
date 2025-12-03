@@ -1,5 +1,7 @@
 # Copyright (c) 2010-2024 openpyxl
 
+from copy import deepcopy
+
 from openpyxl.descriptors.serialisable import Serialisable
 from openpyxl.descriptors import (
     Typed,
@@ -11,12 +13,42 @@ from openpyxl.descriptors import (
 from openpyxl.descriptors.excel import ExtensionList as OfficeArtExtensionList
 from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.chart.text import RichText
+from openpyxl.xml.functions import Element
 
 from .properties import (
     NonVisualDrawingProps,
     NonVisualDrawingShapeProps,
 )
 from .geometry import ShapeStyle
+
+
+class RawShapeElement(Serialisable):
+    """
+    Preserves unparsed shape XML for round-trip fidelity.
+
+    This class is used when a shape cannot be fully parsed due to
+    unsupported features. It stores the raw XML element and can
+    serialize it back unchanged.
+    """
+
+    tagname = "sp"
+
+    def __init__(self):
+        self._content = None
+
+    @classmethod
+    def from_tree(cls, node):
+        """Store the raw XML element for later serialization"""
+        obj = cls()
+        obj._content = deepcopy(node)
+        return obj
+
+    def to_tree(self, tagname=None, idx=None, namespace=None):
+        """Return the preserved raw XML element"""
+        if self._content is not None:
+            return deepcopy(self._content)
+        # Fallback to empty element if no content
+        return Element(tagname or self.tagname)
 
 class Connection(Serialisable):
 
@@ -113,6 +145,8 @@ class ShapeMeta(Serialisable):
 
 class Shape(Serialisable):
 
+    tagname = "sp"
+
     macro = String(allow_none=True)
     textlink = String(allow_none=True)
     fPublished = Bool(allow_none=True)
@@ -123,6 +157,9 @@ class Shape(Serialisable):
     graphicalProperties = Alias("spPr")
     style = Typed(expected_type=ShapeStyle, allow_none=True)
     txBody = Typed(expected_type=RichText, allow_none=True)
+
+    # Flag to indicate this is preserved raw content
+    _is_raw = False
 
     def __init__(self,
                  macro=None,
@@ -142,3 +179,37 @@ class Shape(Serialisable):
         self.spPr = spPr
         self.style = style
         self.txBody = txBody
+        self._raw_content = None
+
+    @classmethod
+    def from_tree(cls, node):
+        """
+        Parse shape from XML. If parsing fails due to unsupported features,
+        fall back to preserving raw XML for round-trip fidelity.
+        """
+        try:
+            return super(Shape, cls).from_tree(node)
+        except (TypeError, KeyError, AttributeError):
+            # Parsing failed - preserve as raw content
+            obj = cls.__new__(cls)
+            obj._raw_content = deepcopy(node)
+            obj._is_raw = True
+            # Initialize all attributes to None/defaults to avoid AttributeError
+            obj.macro = None
+            obj.textlink = None
+            obj.fPublished = None
+            obj.fLocksText = None
+            obj.nvSpPr = None
+            obj.spPr = None
+            obj.style = None
+            obj.txBody = None
+            return obj
+
+    def to_tree(self, tagname=None, idx=None, namespace=None):
+        """
+        Serialize shape to XML. If this is preserved raw content,
+        return the original XML unchanged.
+        """
+        if getattr(self, '_raw_content', None) is not None:
+            return deepcopy(self._raw_content)
+        return super().to_tree(tagname, idx, namespace)

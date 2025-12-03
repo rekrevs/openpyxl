@@ -88,6 +88,8 @@ class Workbook:
         self.calculation = CalcProperties()
         self.views = [BookView()]
         self.metadata = None  # Metadata for dynamic arrays, etc.
+        self.persons = None  # PersonList for threaded comments authors
+        self.rich_data = None  # RichDataManager for stocks, geography data types
 
 
     def _setup_styles(self):

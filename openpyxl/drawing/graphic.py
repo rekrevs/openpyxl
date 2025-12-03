@@ -1,5 +1,7 @@
 # Copyright (c) 2010-2024 openpyxl
 
+from copy import deepcopy
+
 from openpyxl.xml.constants import CHART_NS, DRAWING_NS
 from openpyxl.descriptors.serialisable import Serialisable
 from openpyxl.descriptors import (
@@ -167,6 +169,9 @@ class GroupShape(Serialisable):
 
     __elements__ = ["nvGrpSpPr", "grpSpPr", "pic"]
 
+    # Flag to indicate this is preserved raw content
+    _is_raw = False
+
     def __init__(self,
                  nvGrpSpPr=None,
                  grpSpPr=None,
@@ -175,3 +180,32 @@ class GroupShape(Serialisable):
         self.nvGrpSpPr = nvGrpSpPr
         self.grpSpPr = grpSpPr
         self.pic = pic
+        self._raw_content = None
+
+    @classmethod
+    def from_tree(cls, node):
+        """
+        Parse group shape from XML. If parsing fails due to unsupported features,
+        fall back to preserving raw XML for round-trip fidelity.
+        """
+        try:
+            return super(GroupShape, cls).from_tree(node)
+        except (TypeError, KeyError, AttributeError):
+            # Parsing failed - preserve as raw content
+            obj = cls.__new__(cls)
+            obj._raw_content = deepcopy(node)
+            obj._is_raw = True
+            # Initialize all attributes to None/defaults to avoid AttributeError
+            obj.nvGrpSpPr = None
+            obj.grpSpPr = None
+            obj.pic = None
+            return obj
+
+    def to_tree(self, tagname=None, idx=None, namespace=None):
+        """
+        Serialize group shape to XML. If this is preserved raw content,
+        return the original XML unchanged.
+        """
+        if getattr(self, '_raw_content', None) is not None:
+            return deepcopy(self._raw_content)
+        return super().to_tree(tagname, idx, namespace)

@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openpyxl"
+version = "3.1.5"
+description = "A Python library to read/write Excel 2010 xlsx/xlsm files"
+readme = "README.rst"
+license = {text = "MIT"}
+authors = [
+    {name = "See AUTHORS", email = "charlie.clark@clark-consulting.eu"}
+]
+maintainers = [
+    {email = "openpyxl-users@googlegroups.com"}
+]
+requires-python = ">=3.8"
+dependencies = [
+    "et_xmlfile",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Documentation = "https://openpyxl.readthedocs.io/en/stable/"
+Source = "https://foss.heptapod.net/openpyxl/openpyxl"
+Tracker = "https://foss.heptapod.net/openpyxl/openpyxl/-/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["*.tests", "scratchpad*"]

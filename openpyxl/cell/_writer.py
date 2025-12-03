@@ -23,6 +23,10 @@ def _set_attributes(cell, styled=None):
     elif cell.data_type != 'f':
         attrs['t'] = cell.data_type
 
+    # Cell metadata index for dynamic arrays
+    if cell._cell_metadata_index is not None:
+        attrs['cm'] = str(cell._cell_metadata_index)
+
     value = cell._value
 
     if cell.data_type == "d":

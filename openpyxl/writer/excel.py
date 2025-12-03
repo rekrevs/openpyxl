@@ -20,6 +20,10 @@ from openpyxl.xml.constants import (
     ARC_WORKBOOK,
     ARC_METADATA,
     METADATA_TYPE,
+    THREADEDCOMMENTS_REL,
+    PERSONS_REL,
+    SLICER_REL,
+    TIMELINE_REL,
     )
 from openpyxl.drawing.spreadsheet_drawing import SpreadsheetDrawing
 from openpyxl.xml.functions import tostring, fromstring
@@ -49,6 +53,9 @@ class ExcelWriter:
         self._images = []
         self._drawings = []
         self._comments = []
+        self._threaded_comments = []
+        self._slicers = []
+        self._timelines = []
         self._pivots = []
 
 
@@ -87,6 +94,8 @@ class ExcelWriter:
         archive.writestr(ARC_STYLE, tostring(stylesheet))
 
         self._write_metadata()
+        self._write_persons()
+        self._write_rich_data()
 
         writer = WorkbookWriter(self.workbook)
         archive.writestr(ARC_ROOT_RELS, writer.write_root_rels())
@@ -208,6 +217,64 @@ class ExcelWriter:
         ws._rels.append(comment_rel)
 
 
+    def _write_threaded_comment(self, ws):
+        """Write threaded comments for a worksheet"""
+        tc = ws.threaded_comments
+        self._threaded_comments.append(tc)
+        tc._id = len(self._threaded_comments)
+
+        self._archive.writestr(tc.path[1:], tostring(tc.to_tree()))
+        self.manifest.append(tc)
+
+        tc_rel = Relationship(Type=THREADEDCOMMENTS_REL, Target=tc.path)
+        ws._rels.append(tc_rel)
+
+
+    def _write_persons(self):
+        """Write persons list for threaded comments (if present)"""
+        persons = self.workbook.persons
+        if persons is None or not persons:
+            return
+
+        self._archive.writestr(persons.path[1:], tostring(persons.to_tree()))
+        self.manifest.append(persons)
+
+
+    def _write_rich_data(self):
+        """Write rich data files (stocks, geography) if present"""
+        rich_data = self.workbook.rich_data
+        if rich_data is None or not rich_data:
+            return
+
+        rich_data.write(self._archive, self.manifest)
+
+
+    def _write_slicer(self, ws):
+        """Write slicers for a worksheet"""
+        sl = ws.slicers
+        self._slicers.append(sl)
+        sl._id = len(self._slicers)
+
+        self._archive.writestr(sl.path[1:], tostring(sl.to_tree()))
+        self.manifest.append(sl)
+
+        sl_rel = Relationship(Type=SLICER_REL, Target=sl.path)
+        ws._rels.append(sl_rel)
+
+
+    def _write_timeline(self, ws):
+        """Write timelines for a worksheet"""
+        tl = ws.timelines
+        self._timelines.append(tl)
+        tl._id = len(self._timelines)
+
+        self._archive.writestr(tl.path[1:], tostring(tl.to_tree()))
+        self.manifest.append(tl)
+
+        tl_rel = Relationship(Type=TIMELINE_REL, Target=tl.path)
+        ws._rels.append(tl_rel)
+
+
     def write_worksheet(self, ws):
         ws._drawing = SpreadsheetDrawing()
         ws._drawing.charts = ws._charts
@@ -244,6 +311,15 @@ class ExcelWriter:
 
             if ws._comments:
                 self._write_comment(ws)
+
+            if ws.threaded_comments:
+                self._write_threaded_comment(ws)
+
+            if ws.slicers:
+                self._write_slicer(ws)
+
+            if ws.timelines:
+                self._write_timeline(ws)
 
             if ws.legacy_drawing is not None:
                 shape_rel = Relationship(type="vmlDrawing", Id="anysvml",

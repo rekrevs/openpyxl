@@ -40,8 +40,8 @@ class Tokenizer:
     }
     ERROR_CODES = ("#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?",
                    "#NUM!", "#N/A", "#GETTING_DATA")
-    TOKEN_ENDERS = ',;}) +-*/^&=><%'  # Each of these characters, marks the
-                                       # end of an operand token
+    TOKEN_ENDERS = ',;}) +-*/^&=><%#'  # Each of these characters, marks the
+                                        # end of an operand token
 
     def __init__(self, formula):
         self.formula = formula
@@ -147,14 +147,36 @@ class Tokenizer:
 
     def _parse_error(self):
         """
-        Consume the text following a '#' as an error.
+        Consume the text following a '#' as an error or spilled range operator.
 
-        Looks for a match in self.ERROR_CODES and returns the number of
-        characters matched. (Does not update self.offset)
+        If '#' follows a RANGE operand (not ending with '!'), it's the spilled
+        range operator (A1#). Otherwise, looks for a match in self.ERROR_CODES
+        and returns the number of characters matched. (Does not update self.offset)
 
         """
-        self.assert_empty_token(can_follow='!')
         assert self.formula[self.offset] == '#'
+
+        # Check if there's a preceding RANGE operand
+        if self.items:
+            prev = self.items[-1]
+            if prev.type == Token.OPERAND and prev.subtype == Token.RANGE:
+                if prev.value.endswith('!'):
+                    # Range ends with '!' (like MyTable!), so # starts an error
+                    # code that's part of the range reference (e.g., MyTable!#REF!)
+                    subformula = self.formula[self.offset:]
+                    for err in self.ERROR_CODES:
+                        if subformula.startswith(err):
+                            prev.value += err
+                            return len(err)
+                    raise TokenizerError(
+                        f"Invalid error code at position {self.offset} in '{self.formula}'"
+                    )
+                else:
+                    # Spilled range operator (A1# syntax)
+                    prev.value += '#'
+                    return 1
+
+        self.assert_empty_token(can_follow='!')
         subformula = self.formula[self.offset:]
         for err in self.ERROR_CODES:
             if subformula.startswith(err):

@@ -258,6 +258,10 @@ def test_implementation_compatbility(ReadOnlyWorksheet, DummyWorkbook):
                     'sheet_format',
                     'sheet_properties',
                     'sheet_state',
+                    'slicers',
+                    'sparklines',
+                    'threaded_comments',
+                    'timelines',
                     'views']
                    )
 

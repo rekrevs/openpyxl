@@ -1,6 +1,6 @@
 # Copyright (c) 2010-2024 openpyxl
 
-from copy import copy
+from copy import copy, deepcopy
 from keyword import kwlist
 KEYWORDS = frozenset(kwlist)
 
@@ -37,6 +37,9 @@ class Serialisable(metaclass=MetaSerialisable):
 
     idx_base = 0
 
+    # Set to True in subclasses to preserve unknown child elements on round-trip
+    _preserve_unknown = False
+
     @property
     def tagname(self):
         raise(NotImplementedError)
@@ -70,6 +73,9 @@ class Serialisable(metaclass=MetaSerialisable):
         if node.text and "attr_text" in cls.__attrs__:
             attrib["attr_text"] = node.text
 
+        # Track handled tags for unknown child preservation
+        handled_tags = set()
+
         for el in node:
             tag = localname(el)
             if tag in KEYWORDS:
@@ -77,6 +83,8 @@ class Serialisable(metaclass=MetaSerialisable):
             desc = getattr(cls, tag, None)
             if desc is None or isinstance(desc, property):
                 continue
+
+            handled_tags.add(localname(el))
 
             if hasattr(desc, 'from_tree'):
                 #descriptor manages conversion
@@ -100,7 +108,17 @@ class Serialisable(metaclass=MetaSerialisable):
             else:
                 attrib[tag] = obj
 
-        return cls(**attrib)
+        obj = cls(**attrib)
+
+        # Preserve unknown children if enabled
+        if getattr(cls, '_preserve_unknown', False):
+            obj._unknown_children = []
+            for el in node:
+                tag = localname(el)
+                if tag not in handled_tags:
+                    obj._unknown_children.append(deepcopy(el))
+
+        return obj
 
 
     def to_tree(self, tagname=None, idx=None, namespace=None):
@@ -154,6 +172,12 @@ class Serialisable(metaclass=MetaSerialisable):
                     node = obj.to_tree(child_tag)
                 if node is not None:
                     el.append(node)
+
+        # Append preserved unknown children if enabled
+        if getattr(self.__class__, '_preserve_unknown', False):
+            for child in getattr(self, '_unknown_children', []):
+                el.append(deepcopy(child))
+
         return el
 
 

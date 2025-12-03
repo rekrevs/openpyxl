@@ -121,6 +121,46 @@ class TestTable:
         assert "xl/tables/table1.xml" in archive.namelist()
 
 
+    def test_from_headers(self, Table):
+        """Test the from_headers convenience constructor"""
+        headers = ["Name", "Age", "City"]
+        table = Table.from_headers(
+            displayName="People",
+            ref="A1:C10",
+            headers=headers,
+            style="TableStyleMedium9"
+        )
+
+        # Table should be properly initialized
+        assert table.displayName == "People"
+        assert table.ref == "A1:C10"
+
+        # Columns should have correct headers
+        assert len(table.tableColumns) == 3
+        assert table.column_names == headers
+
+        # Style should be set
+        assert table.tableStyleInfo is not None
+        assert table.tableStyleInfo.name == "TableStyleMedium9"
+        assert table.tableStyleInfo.showRowStripes is True
+
+        # AutoFilter should be created
+        assert table.autoFilter is not None
+
+
+    def test_from_headers_no_style(self, Table):
+        """Test from_headers without style"""
+        table = Table.from_headers(
+            displayName="MyTable",
+            ref="A1:B5",
+            headers=["Col1", "Col2"]
+        )
+
+        assert table.displayName == "MyTable"
+        assert table.column_names == ["Col1", "Col2"]
+        assert table.tableStyleInfo is None
+
+
 @pytest.fixture
 def TableFormula():
     from ..table import TableFormula
