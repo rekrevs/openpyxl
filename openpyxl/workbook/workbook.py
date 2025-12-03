@@ -87,6 +87,7 @@ class Workbook:
         self.rels = RelationshipList()
         self.calculation = CalcProperties()
         self.views = [BookView()]
+        self.metadata = None  # Metadata for dynamic arrays, etc.
 
 
     def _setup_styles(self):

@@ -16,6 +16,7 @@ from openpyxl.workbook.external_link.external import read_external_link
 from openpyxl.pivot.cache import CacheDefinition
 from openpyxl.pivot.record import RecordList
 from openpyxl.worksheet.print_settings import PrintTitles, PrintArea
+from openpyxl.packaging.metadata import read_metadata
 
 from openpyxl.utils.datetime import CALENDAR_MAC_1904
 
@@ -68,6 +69,9 @@ class WorkbookParser:
             self.defined_names = package.definedNames
 
         self.wb.security = package.workbookProtection
+
+        # Read metadata.xml if present (for dynamic arrays, etc.)
+        self.wb.metadata = read_metadata(self.archive)
 
 
     def find_sheets(self):

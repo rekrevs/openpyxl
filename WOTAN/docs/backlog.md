@@ -78,18 +78,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 
 ## Priority 1: Critical (Dynamic Arrays & Functions)
 
-### B-DYNARR-01: Add metadata.xml infrastructure `[READY]`
+### B-DYNARR-01: Add metadata.xml infrastructure `[DONE]`
 
 **Intent**: Create the foundation for dynamic array support by implementing metadata.xml file handling.
 
-**Next**: T-DYNARR-01
+**Completed**: T-DYNARR-01 (2024-12-03)
 
-**Details**:
-- Create `openpyxl/packaging/metadata.py`
-- Add `METADATA_NS` to `xml/constants.py`
-- Add metadata content type
-- Add workbook relationship for metadata
-- Parse and preserve metadata.xml in round-trips
+**Summary**: Created `openpyxl/packaging/metadata.py` with complete Metadata class hierarchy. Added reading in workbook parser, writing in excel writer with proper relationships and content types. Metadata preserved on round-trip.
 
 ### B-DYNARR-02: Add cell metadata attribute support `[NEEDS-SPEC]`
 
@@ -432,3 +427,5 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 | T-DOC-01 | Research | DONE |
 | T-FUNC-01 | B-FUNC-01 | DONE |
 | T-PRESERVE-05 | B-PRESERVE-05 | DONE |
+| T-DOC-01-DA | B-DOC-01 | DONE |
+| T-DYNARR-01 | B-DYNARR-01 | DONE |

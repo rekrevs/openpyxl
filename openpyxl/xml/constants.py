@@ -34,6 +34,7 @@ ARC_STYLE = PACKAGE_XL + '/styles.xml'
 ARC_THEME = PACKAGE_THEME + '/theme1.xml'
 ARC_SHARED_STRINGS = PACKAGE_XL + '/sharedStrings.xml'
 ARC_CUSTOM_UI = 'customUI/customUI.xml'
+ARC_METADATA = PACKAGE_XL + '/metadata.xml'
 
 ## namespaces
 # XML
@@ -102,6 +103,7 @@ DRAWING_TYPE = "application/vnd.openxmlformats-officedocument.drawing+xml"
 CHART_TYPE = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml"
 CHARTSHAPE_TYPE = "application/vnd.openxmlformats-officedocument.drawingml.chartshapes+xml"
 THEME_TYPE = "application/vnd.openxmlformats-officedocument.theme+xml"
+METADATA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml"
 CPROPS_TYPE = "application/vnd.openxmlformats-officedocument.custom-properties+xml"
 XLTM = WORKBOOK_MACRO % 'template'
 XLSM = WORKBOOK_MACRO % 'sheet'

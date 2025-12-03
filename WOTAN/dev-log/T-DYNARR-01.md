@@ -1,0 +1,81 @@
+# Task: T-DYNARR-01
+
+## Header
+
+| Field | Value |
+|-------|-------|
+| **ID** | T-DYNARR-01 |
+| **Parent** | B-DYNARR-01 |
+| **State** | DONE |
+| **Created** | 2024-12-03 |
+| **Updated** | 2024-12-03 |
+
+## Objective
+
+Create the foundation for dynamic array support by implementing metadata.xml file handling.
+
+## Acceptance Criteria
+
+- [x] Create `openpyxl/packaging/metadata.py`
+- [x] Add `ARC_METADATA` and `METADATA_TYPE` to `xml/constants.py`
+- [x] Add `metadata` attribute to Workbook class
+- [x] Read metadata.xml in workbook parser
+- [x] Write metadata.xml in excel writer
+- [x] Add relationship for metadata in workbook writer
+- [x] Unit tests for metadata module
+- [x] All existing tests pass
+
+## Implementation
+
+### New File: `openpyxl/packaging/metadata.py`
+
+Complete metadata infrastructure with:
+
+- `MetadataType` - Metadata type definition with behavior flags
+- `MetadataTypes` - Container for metadata types
+- `MetadataRecord` - Record with type and value indices
+- `MetadataBlock` - Block of records
+- `CellMetadata` / `ValueMetadata` - Metadata containers
+- `FutureMetadataBlock` - Future metadata block with extensions
+- `FutureMetadata` - Container for future metadata (XLDAPR, etc.)
+- `Metadata` - Root element for metadata.xml
+- `read_metadata()` - Helper to read from archive
+
+### Constants Added
+
+In `openpyxl/xml/constants.py`:
+- `ARC_METADATA = 'xl/metadata.xml'`
+- `METADATA_TYPE` - Content type for metadata
+
+In `openpyxl/packaging/metadata.py`:
+- `METADATA_REL` - Relationship type
+- `DYNAMIC_ARRAY_NS` - Namespace for xda
+- `XLDAPR_URI` - Extension URI
+
+### Integration
+
+- `openpyxl/workbook/workbook.py` - Added `self.metadata = None`
+- `openpyxl/reader/workbook.py` - Reads metadata.xml if present
+- `openpyxl/writer/excel.py` - Writes metadata.xml if present, adds to manifest
+- `openpyxl/workbook/_writer.py` - Adds metadata relationship
+
+### Files Changed
+
+- `openpyxl/packaging/metadata.py` (new)
+- `openpyxl/packaging/tests/test_metadata.py` (new)
+- `openpyxl/xml/constants.py`
+- `openpyxl/workbook/workbook.py`
+- `openpyxl/reader/workbook.py`
+- `openpyxl/writer/excel.py`
+- `openpyxl/workbook/_writer.py`
+- `WOTAN/docs/research/dynamic-arrays.md` (new)
+
+## Test Results
+
+All 11 metadata tests pass. All existing tests continue to pass.
+
+## Next Steps
+
+With metadata infrastructure in place, the following items are now unblocked:
+- B-DYNARR-02: Add cell metadata attribute support (`cm` attribute)
+- B-DYNARR-03: Implement futureMetadata XLDAPR (dynamic array properties)

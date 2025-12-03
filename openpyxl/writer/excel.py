@@ -18,6 +18,8 @@ from openpyxl.xml.constants import (
     ARC_THEME,
     ARC_STYLE,
     ARC_WORKBOOK,
+    ARC_METADATA,
+    METADATA_TYPE,
     )
 from openpyxl.drawing.spreadsheet_drawing import SpreadsheetDrawing
 from openpyxl.xml.functions import tostring, fromstring
@@ -84,6 +86,8 @@ class ExcelWriter:
         stylesheet = write_stylesheet(self.workbook)
         archive.writestr(ARC_STYLE, tostring(stylesheet))
 
+        self._write_metadata()
+
         writer = WorkbookWriter(self.workbook)
         archive.writestr(ARC_ROOT_RELS, writer.write_root_rels())
         archive.writestr(ARC_WORKBOOK, writer.write())
@@ -92,6 +96,23 @@ class ExcelWriter:
         self._merge_vba()
 
         self.manifest._write(archive, self.workbook)
+
+    def _write_metadata(self):
+        """
+        Write metadata.xml if present (for dynamic arrays, etc.)
+        """
+        metadata = self.workbook.metadata
+        if metadata is None:
+            return
+
+        self._archive.writestr(ARC_METADATA, tostring(metadata.to_tree()))
+
+        # Add to manifest
+        class MetadataOverride:
+            path = "/" + ARC_METADATA
+            mime_type = METADATA_TYPE
+
+        self.manifest.append(MetadataOverride())
 
     def _merge_vba(self):
         """

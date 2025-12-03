@@ -12,6 +12,7 @@ from openpyxl.xml.constants import (
     CUSTOMUI_NS,
     ARC_ROOT_RELS,
 )
+from openpyxl.packaging.metadata import METADATA_REL
 from openpyxl.xml.functions import tostring, fromstring
 
 from openpyxl.packaging.relationship import Relationship, RelationshipList
@@ -166,6 +167,10 @@ class WorkbookWriter:
             vba =  Relationship(type='', Target='vbaProject.bin')
             vba.Type ='http://schemas.microsoft.com/office/2006/relationships/vbaProject'
             self.rels.append(vba)
+
+        if self.wb.metadata is not None:
+            metadata = Relationship(Type=METADATA_REL, Target='metadata.xml')
+            self.rels.append(metadata)
 
         return tostring(self.rels.to_tree())
 
