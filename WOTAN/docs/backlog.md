@@ -396,16 +396,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 - Document cell cm attribute
 - Create `WOTAN/docs/research/dynamic-arrays.md`
 
-### B-DOC-02: Research MS-XLSX threaded comments spec `[READY]`
+### B-DOC-02: Research MS-XLSX threaded comments spec `[DONE]`
 
 **Intent**: Document exact XML structures for threaded comments.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Extract threadedComment schema
-- Document person.xml format
-- Create `WOTAN/docs/research/threaded-comments.md`
+**Summary**: Created comprehensive research document covering CT_PersonList, CT_Person, CT_ThreadedComments, CT_ThreadedComment, and CT_Mention schemas. Documented content types, relationship URIs, namespaces, GUID format requirements, and implementation plan.
 
 ---
 
@@ -429,3 +426,4 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 | T-PRESERVE-05 | B-PRESERVE-05 | DONE |
 | T-DOC-01-DA | B-DOC-01 | DONE |
 | T-DYNARR-01 | B-DYNARR-01 | DONE |
+| T-DOC-02 | B-DOC-02 | DONE |
