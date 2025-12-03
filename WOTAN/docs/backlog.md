@@ -384,17 +384,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 - Modern charts
 - Store in `openpyxl/tests/data/wotan/`
 
-### B-DOC-01: Research MS-XLSX dynamic array spec `[READY]`
+### B-DOC-01: Research MS-XLSX dynamic array spec `[DONE]`
 
 **Intent**: Document exact XML structures for dynamic arrays.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Download current MS-XLSX PDF
-- Extract metadata.xml schema
-- Document cell cm attribute
-- Create `WOTAN/docs/research/dynamic-arrays.md`
+**Summary**: Created comprehensive research document covering metadata.xml structure, XLDAPR namespace, cell `cm` attribute, futureMetadata blocks, and implementation plan.
 
 ### B-DOC-02: Research MS-XLSX threaded comments spec `[DONE]`
 
