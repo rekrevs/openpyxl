@@ -4,6 +4,8 @@
 Excel specific descriptors
 """
 
+from copy import deepcopy
+
 from openpyxl.xml.constants import REL_NS
 from openpyxl.compat import safe_string
 from openpyxl.xml.functions import Element
@@ -56,6 +58,15 @@ class Percentage(MinMax):
 
 
 class Extension(Serialisable):
+    """
+    Represents an extension element in XLSX.
+
+    Extensions store Microsoft-specific features like sparklines, slicers,
+    and timelines. The raw XML content is preserved to enable round-trip
+    fidelity even for extensions we don't fully understand.
+    """
+
+    tagname = "ext"
 
     uri = String()
 
@@ -63,9 +74,37 @@ class Extension(Serialisable):
                  uri=None,
                 ):
         self.uri = uri
+        self._content = None  # Raw XML element for preservation
+
+    @classmethod
+    def from_tree(cls, node):
+        """
+        Create Extension from XML, preserving the full content.
+        """
+        uri = node.get('uri')
+        obj = cls(uri=uri)
+        # Store a deep copy of the entire element for round-trip preservation
+        obj._content = deepcopy(node)
+        return obj
+
+    def to_tree(self, tagname=None, idx=None, namespace=None):
+        """
+        Serialize to XML. If we have preserved content, return it unchanged.
+        """
+        if self._content is not None:
+            return deepcopy(self._content)
+        # Fallback for programmatically created extensions
+        return super().to_tree(tagname=tagname, idx=idx, namespace=namespace)
 
 
 class ExtensionList(Serialisable):
+    """
+    Container for Extension elements.
+
+    Preserves all extension content for round-trip fidelity.
+    """
+
+    tagname = "extLst"
 
     ext = Sequence(expected_type=Extension)
 

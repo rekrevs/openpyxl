@@ -586,6 +586,41 @@ class TestWorksheetWriter:
         assert diff is None, diff
 
 
+    def test_extensions(self, writer):
+        """Test that preserved extensions are written to output"""
+        from openpyxl.descriptors.excel import ExtensionList, Extension
+        from lxml.etree import fromstring
+
+        # Create extension with preserved content
+        src = """
+        <ext uri="{05C60535-1F16-4FD2-B633-F4F36F0B64E0}"
+             xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+             xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main">
+            <x14:sparklineGroups>
+                <x14:sparklineGroup type="line">
+                    <x14:sparklines>
+                        <x14:sparkline>
+                            <x14:f>Sheet1!A1:A10</x14:f>
+                            <x14:sqref>B1</x14:sqref>
+                        </x14:sparkline>
+                    </x14:sparklines>
+                </x14:sparklineGroup>
+            </x14:sparklineGroups>
+        </ext>
+        """
+        ext = Extension.from_tree(fromstring(src))
+        writer.ws.extensions = ExtensionList(ext=[ext])
+
+        writer.write_extensions()
+        xml = writer.read()
+
+        # Verify extension content is in output
+        assert b'extLst' in xml
+        assert b'sparklineGroups' in xml
+        assert b'Sheet1!A1:A10' in xml
+        assert b'{05C60535-1F16-4FD2-B633-F4F36F0B64E0}' in xml
+
+
     def test_cleanup(self, writer):
         assert os.path.exists(writer.out) is True
         writer.close()

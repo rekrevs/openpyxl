@@ -284,6 +284,15 @@ class WorksheetWriter:
             self.xf.send(tables.to_tree())
 
 
+    def write_extensions(self):
+        """
+        Write preserved extension list (extLst) for round-trip fidelity.
+        """
+        extensions = self.ws.extensions
+        if extensions and extensions.ext:
+            self.xf.send(extensions.to_tree())
+
+
     def get_stream(self):
         with xmlfile(self.out) as xf:
             with xf.element("worksheet", xmlns=SHEET_MAIN_NS):
@@ -349,6 +358,7 @@ class WorksheetWriter:
         self.write_drawings()
         self.write_legacy()
         self.write_tables()
+        self.write_extensions()
 
 
     def write(self):

@@ -540,6 +540,46 @@ class TestWorksheetParser:
         assert issubclass(w.category, UserWarning)
 
 
+    def test_extensions_preserved_for_round_trip(self, WorkSheetParser):
+        """Test that extension content is preserved for round-trip fidelity"""
+        from openpyxl.xml.functions import tostring
+        parser = WorkSheetParser
+
+        src = """
+        <extLst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+                xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main">
+            <ext uri="{05C60535-1F16-4FD2-B633-F4F36F0B64E0}">
+                <x14:sparklineGroups>
+                    <x14:sparklineGroup type="line">
+                        <x14:sparklines>
+                            <x14:sparkline>
+                                <x14:f>Sheet1!A1:A10</x14:f>
+                                <x14:sqref>B1</x14:sqref>
+                            </x14:sparkline>
+                        </x14:sparklines>
+                    </x14:sparklineGroup>
+                </x14:sparklineGroups>
+            </ext>
+        </extLst>
+        """
+        element = fromstring(src)
+
+        with pytest.warns(UserWarning, match="will be preserved"):
+            parser.parse_extensions(element)
+
+        # Verify extension was stored
+        assert parser.extensions is not None
+        assert len(parser.extensions.ext) == 1
+        assert parser.extensions.ext[0].uri == "{05C60535-1F16-4FD2-B633-F4F36F0B64E0}"
+
+        # Verify content is preserved for round-trip
+        result = parser.extensions.to_tree()
+        result_str = tostring(result).decode()
+        assert 'sparklineGroups' in result_str
+        assert 'Sheet1!A1:A10' in result_str
+        assert 'B1' in result_str
+
+
     def test_bad_conditional_format_rule(self, WorkSheetParser, recwarn):
         parser = WorkSheetParser
 

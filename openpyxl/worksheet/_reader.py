@@ -120,6 +120,7 @@ class WorkSheetParser:
         self.row_breaks = RowBreak()
         self.col_breaks = ColBreak()
         self.rich_text = rich_text
+        self.extensions = None  # ExtensionList for round-trip preservation
 
 
     def parse(self):
@@ -325,8 +326,10 @@ class WorkSheetParser:
         extLst = ExtensionList.from_tree(element)
         for e in extLst.ext:
             ext_type = EXT_TYPES.get(e.uri.upper(), "Unknown")
-            msg = "{0} extension is not supported and will be removed".format(ext_type)
+            msg = "{0} extension is not supported but will be preserved".format(ext_type)
             warn(msg)
+        # Store for round-trip preservation
+        self.extensions = extLst
 
 
     def parse_legacy(self, element):
@@ -454,7 +457,7 @@ class WorksheetReader:
                   'HeaderFooter', 'auto_filter', 'data_validations',
                   'sheet_properties', 'views', 'sheet_format',
                   'row_breaks', 'col_breaks', 'scenarios', 'legacy_drawing',
-                  'protection',
+                  'protection', 'extensions',
                   ):
             v = getattr(self.parser, k, None)
             if v is not None:

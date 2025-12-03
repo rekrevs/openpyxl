@@ -142,6 +142,7 @@ class Worksheet(_WorkbookChild):
         self.sheet_properties = WorksheetProperties()
         self.sheet_format = SheetFormatProperties()
         self.scenarios = ScenarioList()
+        self.extensions = None  # ExtensionList for round-trip preservation
 
 
     @property
