@@ -66,18 +66,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 - Store as raw XML if not fully parsed
 - Write back unchanged
 
-### B-PRESERVE-05: Create round-trip test suite `[READY]`
+### B-PRESERVE-05: Create round-trip test suite `[DONE]`
 
 **Intent**: Test that modern Excel files survive round-trip without data loss.
 
-**Next**: None assigned
+**Completed**: T-PRESERVE-05 (2024-12-03)
 
-**Details**:
-- Create Excel 365 files with each modern feature
-- Run through load_workbook() then save()
-- Compare input/output XML
-- Fail test if content lost (beyond known gaps)
-- Store in `openpyxl/tests/data/wotan/`
+**Summary**: Created `openpyxl/tests/test_roundtrip.py` with 7 tests for round-trip fidelity. Also fixed stdlib/lxml element conversion issue discovered during testing. Test data directory created at `openpyxl/tests/data/wotan/`.
 
 ---
 
@@ -133,21 +128,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 
 ---
 
-### B-FUNC-01: Add Excel 365 functions to FORMULAE `[READY]`
+### B-FUNC-01: Add Excel 365 functions to FORMULAE `[DONE]`
 
 **Intent**: Update the formula validation list with modern Excel functions.
 
-**Next**: T-FUNC-01
+**Completed**: 2024-12-03
 
-**Details**:
-Add to `openpyxl/utils/formulas.py`:
-- Lambda functions: `LAMBDA`, `LET`, `MAKEARRAY`, `MAP`, `REDUCE`, `SCAN`, `BYROW`, `BYCOL`
-- Dynamic array: `FILTER`, `SORT`, `SORTBY`, `UNIQUE`, `SEQUENCE`, `RANDARRAY`
-- Lookup: `XLOOKUP`, `XMATCH`
-- Text: `TEXTJOIN`, `CONCAT`, `TEXTBEFORE`, `TEXTAFTER`, `TEXTSPLIT`, `VALUETOTEXT`, `ARRAYTOTEXT`
-- Aggregate: `GROUPBY`, `PIVOTBY`, `PERCENTOF`
-- Logic: `SWITCH`, `IFS`, `XOR`, `IFNA`, `MAXIFS`, `MINIFS`
-- Other: `IMAGE`, `FIELDVALUE`, `STOCKHISTORY`
+**Summary**: Added 147 Excel 365/2019+ functions to `openpyxl/utils/formulas.py`. Total functions now 499 (352 classic + 147 modern). Includes dynamic array, lambda, lookup, text, statistical, and other modern functions.
 
 ### B-FUNC-02: Document _xlfn prefix handling `[READY]`
 
@@ -443,3 +430,5 @@ Add to `openpyxl/utils/formulas.py`:
 | T-PRESERVE-01 | B-PRESERVE-01 | DONE |
 | T-PRESERVE-02 | B-PRESERVE-02 | DONE |
 | T-DOC-01 | Research | DONE |
+| T-FUNC-01 | B-FUNC-01 | DONE |
+| T-PRESERVE-05 | B-PRESERVE-05 | DONE |

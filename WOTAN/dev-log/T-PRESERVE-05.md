@@ -1,0 +1,68 @@
+# Task: T-PRESERVE-05
+
+## Header
+
+| Field | Value |
+|-------|-------|
+| **ID** | T-PRESERVE-05 |
+| **Parent** | B-PRESERVE-05 |
+| **State** | DONE |
+| **Created** | 2024-12-03 |
+| **Updated** | 2024-12-03 |
+
+## Objective
+
+Create round-trip test suite to verify that modern Excel files survive `load_workbook()` then `save()` without data loss.
+
+## Acceptance Criteria
+
+- [x] Test infrastructure created
+- [x] Tests for sample.xlsx round-trip
+- [x] Tests for extension preservation
+- [x] Tests for worksheet XML structure
+- [x] Tests for styles preservation
+- [x] Tests for formula preservation
+- [x] WOTAN test data directory created
+- [x] All tests pass
+
+## Context
+
+The WOTAN initiative requires comprehensive testing to ensure that Excel features are preserved during round-trips. This test suite validates the preservation work done in T-PRESERVE-01 and T-PRESERVE-02.
+
+## Implementation
+
+### Created Test File
+
+`openpyxl/tests/test_roundtrip.py` with:
+
+1. **TestRoundTrip class**:
+   - `test_sample_xlsx_roundtrip` - Validates basic round-trip of sample.xlsx
+   - `test_extensions_preserved` - Checks extLst content survives
+   - `test_worksheet_xml_structure` - Verifies XML structure
+   - `test_empty_xlsx_roundtrip` - Tests minimal file
+   - `test_styles_preserved` - Checks styles.xml content
+   - `test_formulas_preserved` - Verifies formula cells
+
+2. **TestWotanFiles class**:
+   - `test_wotan_dir_exists` - Verifies test data directory
+
+3. **Utility functions**:
+   - `get_xml_content()` - Extract and parse XML from XLSX
+   - `xml_to_string()` - Normalize XML for comparison
+   - `compare_xml_elements()` - Recursive XML comparison
+   - `create_minimal_xlsx_with_features()` - Helper for test file generation
+
+### Bug Fix: stdlib to lxml Conversion
+
+During test development, discovered that `iterparse` uses stdlib `xml.etree.ElementTree` but openpyxl serializes with `lxml`. Added `_convert_to_lxml()` function to handle this conversion.
+
+### Files Changed
+
+- `openpyxl/tests/test_roundtrip.py` - New round-trip test suite
+- `openpyxl/tests/data/wotan/` - Created test data directory
+- `openpyxl/descriptors/excel.py` - Added `_convert_to_lxml()` function
+- `openpyxl/worksheet/_reader.py` - Use `_convert_to_lxml()` for unknown elements
+
+## Test Results
+
+All 7 round-trip tests pass. Full test suite (708 tests) continues to pass.

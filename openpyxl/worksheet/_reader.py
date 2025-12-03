@@ -27,7 +27,7 @@ from openpyxl.utils import (
     coordinate_to_tuple,
     )
 from openpyxl.utils.datetime import from_excel, from_ISO8601, WINDOWS_EPOCH
-from openpyxl.descriptors.excel import ExtensionList
+from openpyxl.descriptors.excel import ExtensionList, _convert_to_lxml
 from openpyxl.cell.rich_text import CellRichText
 
 from .formula import DataTableFormula, ArrayFormula
@@ -198,7 +198,8 @@ class WorkSheetParser:
                 yield row
             elif tag_name in PRESERVE_TAGS:
                 # Preserve known but unhandled worksheet elements for round-trip fidelity
-                self.unknown_elements[tag_name] = deepcopy(element)
+                # Convert to lxml since iterparse uses stdlib but we serialize with lxml
+                self.unknown_elements[tag_name] = _convert_to_lxml(element)
                 element.clear()
 
 

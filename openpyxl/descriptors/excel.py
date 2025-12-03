@@ -20,6 +20,29 @@ from . import (
 from .serialisable import Serialisable
 
 
+def _convert_to_lxml(node):
+    """
+    Convert a standard library xml.etree.ElementTree element to lxml element.
+
+    This is needed because iterparse uses stdlib, but openpyxl serialization uses lxml.
+    The conversion preserves tag, attributes, text, tail, and all children recursively.
+    """
+    # Check if already an lxml element
+    if hasattr(node, 'nsmap'):
+        return deepcopy(node)
+
+    # Create new lxml element with same tag and attributes
+    new_elem = Element(node.tag, node.attrib)
+    new_elem.text = node.text
+    new_elem.tail = node.tail
+
+    # Recursively convert children
+    for child in node:
+        new_elem.append(_convert_to_lxml(child))
+
+    return new_elem
+
+
 class HexBinary(MatchPattern):
 
     pattern = "[0-9a-fA-F]+$"
@@ -83,8 +106,8 @@ class Extension(Serialisable):
         """
         uri = node.get('uri')
         obj = cls(uri=uri)
-        # Store a deep copy of the entire element for round-trip preservation
-        obj._content = deepcopy(node)
+        # Convert to lxml and store - iterparse uses stdlib but we serialize with lxml
+        obj._content = _convert_to_lxml(node)
         return obj
 
     def to_tree(self, tagname=None, idx=None, namespace=None):
