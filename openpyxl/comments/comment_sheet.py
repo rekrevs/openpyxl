@@ -125,7 +125,11 @@ class CommentRecord(Serialisable):
         comment = cell._comment
         ref = cell.coordinate
         self = cls(ref=ref, author=comment.author)
-        self.text.t = comment.content
+        # Use preserved rich text if available, otherwise plain text
+        if comment._text_obj is not None:
+            self.text = comment._text_obj
+        else:
+            self.text.t = comment.content
         self.height = comment.height
         self.width = comment.width
         return self
@@ -178,7 +182,11 @@ class CommentSheet(Serialisable):
         authors = self.authors.author
 
         for c in self.commentList:
-            yield c.ref, Comment(c.content, authors[c.authorId], c.height, c.width)
+            comment = Comment(c.content, authors[c.authorId], c.height, c.width)
+            # Preserve rich text formatting if present
+            if c.text is not None and (c.text.r or c.text.rPh or c.text.phoneticPr):
+                comment._text_obj = c.text
+            yield c.ref, comment
 
 
     @classmethod

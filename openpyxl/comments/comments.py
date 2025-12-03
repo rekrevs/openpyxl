@@ -10,6 +10,7 @@ class Comment:
         self.author = author
         self.height = height
         self.width = width
+        self._text_obj = None  # Rich text object for formatting preservation
 
 
     @property
@@ -30,6 +31,7 @@ class Comment:
     def __copy__(self):
         """Create a detached copy of this comment."""
         clone = self.__class__(self.content, self.author, self.height, self.width)
+        clone._text_obj = self._text_obj
         return clone
 
 

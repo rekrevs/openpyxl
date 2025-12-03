@@ -468,6 +468,82 @@ def test_roundtrip(datadir, tmp_path):
 
 ---
 
+## Function Prefix Handling (`_xlfn.`, `_xlpm.`, `_xlws.`)
+
+Modern Excel functions require special prefixes in the OOXML XML to maintain compatibility with older Excel versions. Openpyxl handles these correctly.
+
+### Prefix Types
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `_xlfn.` | Extension function marker | `_xlfn.UNIQUE(A1:A10)` |
+| `_xlfn._xlws.` | Worksheet-scoped function | `_xlfn._xlws.FILTER(A1:A10,B1:B10)` |
+| `_xlpm.` | Parameter name in LAMBDA/LET | `_xlfn.LET(_xlpm.x,A1,_xlpm.x*2)` |
+
+### How Prefixes Work
+
+1. **In XML**: Functions are stored with prefixes so older Excel versions can display a compatibility message instead of an error.
+
+2. **In Excel UI**: Users see function names without prefixes (e.g., `=UNIQUE(A1:A10)`).
+
+3. **Under the hood**: Excel adds/strips prefixes when reading/writing.
+
+### Openpyxl Behavior
+
+**Tokenizer** (`openpyxl/formula/tokenizer.py`):
+- Treats prefixed names as part of the function token
+- `_xlfn.UNIQUE(` is tokenized as a single FUNC token with value `_xlfn.UNIQUE(`
+- Prefixes are preserved on round-trip
+
+**Validation** (`openpyxl/utils/formulas.py`):
+- Functions with `_xlfn.` prefix bypass FORMULAE validation (line 159)
+- Functions without prefix are checked against FORMULAE set
+- All modern functions are now in FORMULAE (B-FUNC-01)
+
+### Example Tokenization
+
+```python
+from openpyxl.formula.tokenizer import Tokenizer
+
+tok = Tokenizer("=_xlfn.UNIQUE(A1:A10)")
+# Token 0: FUNC OPEN _xlfn.UNIQUE(
+# Token 1: OPERAND RANGE A1:A10
+# Token 2: FUNC CLOSE )
+
+tok.render()  # "=_xlfn.UNIQUE(A1:A10)" - prefix preserved
+```
+
+### Functions Requiring `_xlfn.` Prefix
+
+Most Excel 365/2019+ functions require the `_xlfn.` prefix:
+- Dynamic array: `FILTER`, `SORT`, `SORTBY`, `UNIQUE`, `SEQUENCE`, `RANDARRAY`
+- Lambda: `LAMBDA`, `LET`, `MAKEARRAY`, `MAP`, `REDUCE`, `SCAN`, `BYROW`, `BYCOL`
+- Lookup: `XLOOKUP`, `XMATCH`
+- Text: `TEXTJOIN`, `CONCAT`, `TEXTBEFORE`, `TEXTAFTER`, `TEXTSPLIT`
+- Aggregate: `GROUPBY`, `PIVOTBY`, `PERCENTOF`
+- Other: `SWITCH`, `IFS`, `XOR`, `IFNA`, `MAXIFS`, `MINIFS`, `IMAGE`
+
+### Functions Requiring `_xlfn._xlws.` Prefix
+
+Worksheet-scoped functions that interact with ranges:
+- `FILTER` (in some contexts)
+- Certain aggregation functions
+
+### Best Practice
+
+When creating formulas programmatically:
+1. Use the `_xlfn.` prefix for modern functions
+2. Openpyxl will preserve whatever you provide
+3. Excel will accept formulas with or without prefixes (it adds them on save)
+
+```python
+# Both work - Excel normalizes on save
+cell.value = "=UNIQUE(A1:A10)"           # Works, Excel adds prefix on save
+cell.value = "=_xlfn.UNIQUE(A1:A10)"     # Also works, prefix preserved
+```
+
+---
+
 ## Key Classes Reference
 
 | Class | Location | Purpose |

@@ -131,17 +131,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 
 **Summary**: Added 147 Excel 365/2019+ functions to `openpyxl/utils/formulas.py`. Total functions now 499 (352 classic + 147 modern). Includes dynamic array, lambda, lookup, text, statistical, and other modern functions.
 
-### B-FUNC-02: Document _xlfn prefix handling `[READY]`
+### B-FUNC-02: Document _xlfn prefix handling `[DONE]`
 
 **Intent**: Verify and document how openpyxl handles the `_xlfn.` prefix.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Current handling in tokenizer looks correct
-- Verify behavior with test files
-- Document in architecture.md
-- Some functions need `_xlfn._xlws.` prefix
+**Summary**: Verified tokenizer correctly handles `_xlfn.`, `_xlfn._xlws.`, and `_xlpm.` prefixes. Documented behavior in architecture.md including prefix types, tokenization examples, and best practices.
 
 ---
 
@@ -183,16 +179,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 - Maintain legacy comment fallback
 - Generate proper relationships
 
-### B-COMMENT-04: Fix comment formatting preservation `[READY]`
+### B-COMMENT-04: Fix comment formatting preservation `[DONE]`
 
 **Intent**: Preserve font/color formatting when reading comments.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Current: text and dimensions only, formatting lost
-- Parse rich text formatting in comment text
-- Preserve on round-trip
+**Summary**: Added `_text_obj` attribute to Comment class to store rich Text object. Modified CommentSheet.comments to preserve Text object with RichText formatting. Modified CommentRecord.from_cell() to use preserved Text object on write. Formatting (bold, font, color) now survives round-trip.
 
 ---
 
@@ -371,18 +364,18 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 
 ## Infrastructure
 
-### B-TEST-01: Create Excel 365 test file suite `[READY]`
+### B-TEST-01: Create Excel 365 test file suite `[BLOCKED]`
 
 **Intent**: Build comprehensive test files for modern features.
 
-**Next**: None assigned
+**Next**: Requires Excel 365 to create test files manually
 
 **Details**:
-- Create minimal XLSX files in Excel 365 for each feature
-- Dynamic arrays with various functions
-- Threaded comments
-- Modern charts
-- Store in `openpyxl/tests/data/wotan/`
+- Created directory structure: `openpyxl/tests/data/wotan/`
+- Created README.md with specification of required test files
+- Subdirectories: dynamic-arrays, threaded-comments, charts, slicers, rich-data, sparklines
+- Files must be created manually in Excel 365/2021+
+- See `openpyxl/tests/data/wotan/README.md` for complete file list
 
 ### B-DOC-01: Research MS-XLSX dynamic array spec `[DONE]`
 
@@ -423,3 +416,5 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 | T-DOC-01-DA | B-DOC-01 | DONE |
 | T-DYNARR-01 | B-DYNARR-01 | DONE |
 | T-DOC-02 | B-DOC-02 | DONE |
+| T-FUNC-02 | B-FUNC-02 | DONE |
+| T-COMMENT-04 | B-COMMENT-04 | DONE |
