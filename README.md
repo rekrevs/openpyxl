@@ -98,11 +98,11 @@ For core openpyxl functionality, see the [openpyxl documentation](https://openpy
 
 Extension features are documented in the `WOTAN/` directory:
 
-- `WOTAN/docs/vision.md` - Project goals and target capabilities
-- `WOTAN/docs/architecture.md` - openpyxl structure and extension points
-- `WOTAN/docs/openpyxl-api.md` - Comprehensive API reference
-- `WOTAN/docs/backlog.md` - Feature status and roadmap
-- `WOTAN/docs/research/` - OOXML specification research
+- [WOTAN/docs/vision.md](WOTAN/docs/vision.md) - Project goals and target capabilities
+- [WOTAN/docs/architecture.md](WOTAN/docs/architecture.md) - openpyxl structure and extension points
+- [WOTAN/docs/openpyxl-api.md](WOTAN/docs/openpyxl-api.md) - Comprehensive API reference
+- [WOTAN/docs/backlog.md](WOTAN/docs/backlog.md) - Feature status and roadmap
+- [WOTAN/docs/research/](WOTAN/docs/research/) - OOXML specification research
 
 ## Status
 
