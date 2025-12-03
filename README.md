@@ -24,7 +24,7 @@ This fork adds the following capabilities:
 ## Installation
 
 ```bash
-pip install git+https://github.com/soxhub/openpyxl.git@xtend
+pip install git+https://github.com/rekrevs/openpyxl.git@xtend
 ```
 
 ## Example
