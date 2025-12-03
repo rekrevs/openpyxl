@@ -1,0 +1,128 @@
+# Task: T-DOC-01
+
+## Header
+
+| Field | Value |
+|-------|-------|
+| **ID** | T-DOC-01 |
+| **Parent** | User request |
+| **State** | DONE |
+| **Created** | 2024-12-03 |
+| **Updated** | 2024-12-03 |
+
+## Objective
+
+Research XLSX format versioning, developer community discussions, and known challenges before starting implementation.
+
+## Acceptance Criteria
+
+- [x] Search developer forums for openpyxl/XLSX discussions
+- [x] Identify if XLSX has multiple format versions we need to handle
+- [x] Document how other libraries handle version differences
+- [x] Find any existing discussions about the gaps we identified
+- [x] Document findings in WOTAN/docs/research/
+
+## Context
+
+Before implementing WOTAN changes, we need to understand:
+1. What the developer community has already discussed
+2. Whether XLSX versioning is a known issue
+3. How other libraries (XlsxWriter, python-xlsx, SheetJS, EPPlus) handle this
+4. Any gotchas or lessons learned from others
+
+## Implementation
+
+### Research Areas Covered
+
+1. openpyxl-users Google Group - multiple threads on dynamic arrays, LET function, Office 365
+2. Stack Overflow - xlsx/openpyxl tags, function prefixes
+3. Library of Congress format documentation - ECMA-376 editions, Transitional vs Strict
+4. MS-XLSX specification - extension namespaces
+5. Other libraries - XlsxWriter, SheetJS, EPPlus, Apache POI
+
+### Key Findings
+
+#### 1. Format Versioning Is Manageable
+
+Two conformance classes exist (Transitional vs Strict), but:
+- Everyone uses Transitional (Excel default, LibreOffice, Google Sheets)
+- Strict is rarely used, most libraries don't support it
+- ECMA-376 editions (1-5) have minor differences, not a concern
+
+#### 2. Real Challenge Is MS-XLSX Extensions
+
+Microsoft continuously adds features beyond the standard:
+- Dynamic arrays (2020) - requires metadata.xml, cell `cm` attribute
+- Threaded comments - separate XML files
+- Modern functions - require `_xlfn.` prefix
+
+#### 3. Community Already Investigated Dynamic Arrays
+
+User in openpyxl-users found the exact XML changes needed:
+- Add relationship to metadata.xml in workbook.xml.rels
+- Create metadata.xml with futureMetadata XLDAPR
+- Set `cm="1"` on cells with dynamic arrays
+- Bi-directional spill needs calcChain (complex)
+
+#### 4. Function Prefixes Well Documented
+
+- `_xlfn.` for modern functions (XLOOKUP, FILTER, etc.)
+- `_xlpm.` for LAMBDA/LET parameters
+- openpyxl already preserves these in round-trip
+
+#### 5. Maintainer Philosophy
+
+- Target is OOXML spec, not specific Excel versions
+- Features require development effort
+- Volunteers maintain project
+
+## Evidence
+
+### Created Documentation
+
+- `WOTAN/docs/research/xlsx-versions-and-compatibility.md` - comprehensive findings
+
+### Sources Consulted
+
+- Library of Congress format descriptions (Transitional, Strict)
+- MS-XLSX specification v29.0
+- openpyxl-users Google Group (4+ relevant threads)
+- Stack Overflow (function prefixes, Strict format issues)
+- XlsxWriter, SheetJS, EPPlus documentation
+
+## Outcome
+
+**State**: DONE
+
+### Summary
+
+XLSX versioning is a known but manageable issue:
+
+1. **Not a blocker**: Focus on Transitional format (what everyone uses)
+2. **MS-XLSX is the real target**: Extensions define modern features
+3. **Community has groundwork**: Dynamic array XML structure already documented
+4. **Function handling works**: `_xlfn.`/`_xlpm.` prefixes already preserved
+
+### Recommendations for WOTAN
+
+1. Target Transitional format (current openpyxl focus)
+2. Add MS-XLSX extension namespaces
+3. Implement dynamic arrays following community findings
+4. Update FORMULAE list with modern functions
+5. Consider Strict format detection/warning (low priority)
+
+### Follow-up Items
+
+- B-PRESERVE-01: Still the top priority (stop losing extLst content)
+- Consider adding format variant detection
+- Document namespace requirements per feature
+
+---
+
+## Changelog
+
+| Date | Change |
+|------|--------|
+| 2024-12-03 | Created task |
+| 2024-12-03 | Completed research, documented findings |
+| 2024-12-03 | Marked DONE |
