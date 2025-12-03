@@ -2,6 +2,12 @@
 
 Research document for implementing threaded comments support in openpyxl.
 
+> **Implementation Status**: ✅ **COMPLETE** (2024-12-03)
+> - ThreadedComment/ThreadedCommentList: `openpyxl/comments/threaded.py`
+> - Person/PersonList: `openpyxl/comments/person.py`
+> - Reader: `openpyxl/reader/excel.py`
+> - Writer: `openpyxl/writer/excel.py`
+
 ## Overview
 
 Threaded comments (also called "modern comments") were introduced in Excel 365/2019 to replace the legacy comment system. They provide:
@@ -11,9 +17,9 @@ Threaded comments (also called "modern comments") were introduced in Excel 365/2
 - Rich text formatting
 - Done/resolved status
 
-## Current openpyxl Behavior
+## Current openpyxl Behavior (with WOTAN)
 
-openpyxl supports legacy comments but not threaded comments. When loading a workbook with threaded comments, they may be lost or converted to legacy format on save.
+Threaded comments now survive round-trip. The thread structure, authors (persons), and reply relationships are fully preserved.
 
 ## Required XLSX Components
 

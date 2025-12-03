@@ -2,13 +2,18 @@
 
 Research document for implementing dynamic array support in openpyxl.
 
+> **Implementation Status**: ✅ **COMPLETE** (2024-12-03)
+> - Cell `cm` attribute: `openpyxl/cell/_writer.py`, `openpyxl/worksheet/_reader.py`
+> - metadata.xml: `openpyxl/packaging/metadata.py`
+> - Spilled range `#` operator: `openpyxl/formula/tokenizer.py`
+
 ## Overview
 
-Dynamic arrays (introduced in Excel 365/2019) allow a single formula to return multiple values that "spill" into adjacent cells. This requires specific XLSX structures that openpyxl currently doesn't support.
+Dynamic arrays (introduced in Excel 365/2019) allow a single formula to return multiple values that "spill" into adjacent cells. This requires specific XLSX structures that openpyxl now fully supports via WOTAN extensions.
 
-## Current openpyxl Behavior
+## Current openpyxl Behavior (with WOTAN)
 
-When a dynamic array is present in a workbook that is loaded and saved by openpyxl, it is converted to a legacy array formula, losing the dynamic spill behavior.
+Dynamic arrays now survive round-trip. The cell metadata (`cm` attribute) and metadata.xml are properly preserved.
 
 ## Required XLSX Components
 

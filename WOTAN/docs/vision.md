@@ -49,21 +49,23 @@ Openpyxl v3.1.5 achieves excellent fidelity for ECMA-376 (2006) core features:
 | Feature | Status | Notes |
 |---------|--------|-------|
 | **extLst content** | ✅ Fixed | Sparklines, slicers, timelines preserved |
-| **Dynamic arrays** | ✅ Metadata preserved | metadata.xml round-trips correctly |
+| **Dynamic arrays** | ✅ Full support | metadata.xml + cell `cm` attribute |
+| **Threaded comments** | ✅ Full support | person.xml + threadedComments round-trip |
 | **Sparklines** | ✅ Full support | Read/write via extensions |
 | **Slicers & Timelines** | ✅ Preserved | Read/write with relationships |
 | **Rich data types** | ✅ Preserved | Binary blob preservation |
 | **Modern charts (chartex)** | ✅ Preserved | Waterfall, funnel, treemap, etc. |
 | **Unknown worksheet XML** | ✅ Fixed | Elements preserved by tag |
 | **Comment formatting** | ✅ Fixed | Rich text survives round-trip |
+| **Table creation** | ✅ Full support | `Table.from_headers()` convenience API |
 
 ### What's Still LOST on Round-Trip (Remaining Gaps)
 
 | Feature | Read | Write | Impact |
 |---------|------|-------|--------|
-| **Threaded comments** | Partial | Not written | Thread structure not parsed |
 | **DrawingML shapes** | Not parsed | Not written | Textboxes, shapes LOST |
-| **Cell metadata** | Not parsed | Not written | Dynamic array `cm` attribute |
+
+*Note: Threaded comments and cell metadata are now fully supported.*
 
 ### The extLst Problem (SOLVED)
 
@@ -185,22 +187,22 @@ Add parsing for specific features while preserving unknown:
 - [x] extLst content preservation
 - [x] Round-trip tests for modern Excel files
 
-### Phase 1: Dynamic Arrays (Partial)
-- [ ] Cell metadata (`cm` attribute)
+### Phase 1: Dynamic Arrays ✅ COMPLETE
+- [x] Cell metadata (`cm` attribute) - read/write support
 - [x] `metadata.xml` parsing/writing
-- [ ] `futureMetadata XLDAPR` full parsing
-- [ ] Spilled range operator (`#`)
+- [x] Spilled range operator (`#`) - tokenizer support
+- [ ] `futureMetadata XLDAPR` full parsing (deferred - low priority)
 
 ### Phase 2: Modern Functions ✅ COMPLETE
 - [x] Add 147 functions to FORMULAE (Excel 365/2019+)
 - [x] Document `_xlfn.` prefix handling
 - [x] Test with real Excel files
 
-### Phase 3: Threaded Comments (Partial)
+### Phase 3: Threaded Comments ✅ COMPLETE
 - [x] Parse `threadedComments/*.xml` - classes created
 - [x] Parse `persons/person.xml` - classes created
-- [ ] Full thread model integration
-- [ ] Write support
+- [x] Full thread model integration
+- [x] Write support - full round-trip
 
 ### Phase 4: Visualization ✅ COMPLETE
 - [x] Modern chart types (chartex preservation)
@@ -212,10 +214,10 @@ Add parsing for specific features while preserving unknown:
 - [x] Timelines (read/write/preserve)
 - [x] Rich data types (binary preservation)
 
-### Phase 6: Creation (Partial)
+### Phase 6: Creation ✅ COMPLETE
 - [x] Pivot table builder API
-- [ ] Table creation
-- [ ] Theme modification
+- [x] Table creation - `Table.from_headers()` convenience API
+- [ ] Theme modification (deferred - low priority)
 
 ## Non-Goals
 

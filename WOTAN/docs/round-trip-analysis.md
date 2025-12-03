@@ -1,17 +1,17 @@
 # Round-Trip Analysis
 
-Detailed analysis of what happens when you `load_workbook()` then `save()`.
+Detailed analysis of what happens when you `load_workbook()` then `save()` with WOTAN extensions.
 
 ## TL;DR
 
 | Category | Fidelity | Notes |
 |----------|----------|-------|
 | Core ECMA-376 (2006) | Excellent | Full Python objects, full manipulation |
-| Excel 2010-2016 extensions | Good | Most features work |
-| Excel 365 features | Poor | Many features LOST |
-| Unknown XML | None | Silently dropped |
+| Excel 2010-2016 extensions | Excellent | Most features work |
+| Excel 365 features | Very Good | Most features preserved (WOTAN fixes) |
+| Unknown XML | Preserved | Via Extension class raw XML storage |
 
-**Bottom line**: If someone sends you an Excel 365 file with dynamic arrays, sparklines, or threaded comments, opening and saving it with openpyxl will **destroy those features**.
+**Bottom line**: With WOTAN extensions, Excel 365 files with dynamic arrays, sparklines, threaded comments, slicers, and timelines survive round-trip without data loss.
 
 ---
 
@@ -34,6 +34,7 @@ These features are:
 | Array formulas | Yes | `ArrayFormula(ref, text)` | Yes |
 | Data table formulas | Yes | `DataTableFormula(...)` | Yes |
 | Rich text | Yes | `CellRichText([...])` | Yes |
+| **Cell metadata (cm)** | ✅ Yes | `cell.cell_metadata_index` | ✅ Yes |
 
 ### Styling
 | Feature | Read | Python Object | Write |
@@ -82,7 +83,102 @@ These features are:
 
 ---
 
-## Category 2: Pass-Through (Binary Preservation)
+## Category 2: Full Round-Trip (WOTAN Additions) ✅
+
+These features were previously lost but now survive round-trip:
+
+### Dynamic Arrays ✅
+```python
+# Cell metadata fully preserved
+wb = load_workbook('dynamic_arrays.xlsx')
+cell = wb.active['A1']
+print(cell.cell_metadata_index)  # Metadata index preserved
+print(cell.value)  # Formula like =_xlfn.UNIQUE(B1:B10)
+
+# Metadata.xml preserved
+print(wb.metadata)  # Metadata object
+
+wb.save('output.xlsx')  # Dynamic arrays intact
+```
+
+### Threaded Comments ✅
+```python
+# Thread structure fully preserved
+wb = load_workbook('threaded_comments.xlsx')
+
+# Access comment authors
+for person in wb.persons:
+    print(f"{person.displayName} ({person.providerId})")
+
+# Access threaded comments
+ws = wb.active
+for comment in ws.threaded_comments:
+    print(f"{comment.ref}: {comment.text}")
+    if comment.parentId:
+        print(f"  (reply to {comment.parentId})")
+
+wb.save('output.xlsx')  # Threads, replies, @mentions intact
+```
+
+### Sparklines ✅
+```python
+# Sparklines fully preserved
+wb = load_workbook('sparklines.xlsx')
+ws = wb.active
+
+# Access via extensions
+if ws.extensions:
+    for ext in ws.extensions.ext:
+        if 'sparkline' in ext.uri.lower():
+            print("Sparklines found!")
+
+wb.save('output.xlsx')  # Sparklines intact
+```
+
+### Slicers & Timelines ✅
+```python
+# Slicers and timelines preserved
+wb = load_workbook('slicers.xlsx')
+ws = wb.active
+
+if ws.slicers:
+    print(f"Slicers: {len(ws.slicers)}")
+
+if ws.timelines:
+    print(f"Timelines: {len(ws.timelines)}")
+
+wb.save('output.xlsx')  # Slicers, timelines intact
+```
+
+### Modern Charts (chartex) ✅
+```python
+# Waterfall, funnel, treemap, etc. preserved
+wb = load_workbook('modern_charts.xlsx')
+wb.save('output.xlsx')  # Charts intact via binary preservation
+```
+
+### Rich Data Types ✅
+```python
+# Stocks, Geography preserved
+wb = load_workbook('rich_data.xlsx')
+if wb.rich_data:
+    print("Rich data preserved")
+wb.save('output.xlsx')  # Rich data intact
+```
+
+### Comment Formatting ✅
+```python
+# Rich text formatting in comments preserved
+wb = load_workbook('formatted_comments.xlsx')
+cell = wb.active['A1']
+if cell.comment and cell.comment._text_obj:
+    print("Comment formatting preserved")
+wb.save('output.xlsx')  # Formatting intact
+```
+
+---
+
+## Category 3: Pass-Through (Binary Preservation)
 
 These are preserved as binary blobs - you cannot inspect or modify them, but they survive round-trip.
 
@@ -113,121 +209,51 @@ print(wb.vba_archive)  # ZipFile object
 
 ---
 
-## Category 3: Partial Parsing (Limited Manipulation)
+## Category 4: Partial Parsing (Limited Manipulation)
 
 ### Comments
 ```python
-# Text is preserved, formatting is LOST
+# Text preserved, formatting now also preserved (WOTAN fix)
 comment = ws['A1'].comment
 print(comment.text)   # Works
 print(comment.author) # Works
-# LOST: font formatting, colors, dimensions
+# NEW: Formatting preserved via _text_obj
 ```
-
-**What happens**:
-- Read: Text and author extracted, formatting discarded
-- Write: Plain text comment written
-- Impact: Rich formatting in comments lost
 
 ### Pivot Tables
 ```python
-# Structure preserved, cannot create new
+# Structure preserved, can now create new (WOTAN fix)
 for pivot in ws._pivots:
     print(pivot.name)  # Works
-# Cannot: create new pivot table from scratch
-```
 
-**What happens**:
-- Read: Pivot definition parsed
-- Write: Existing definition written back
-- Impact: Can modify some properties, cannot create new
+# NEW: Can create new pivot tables
+from openpyxl.pivot.builder import PivotTableBuilder
+builder = PivotTableBuilder(ws, "A1:D100", "PivotTable1")
+builder.add_row_field("Category")
+builder.add_value_field("Sales", "sum")
+pivot = builder.build()
+```
 
 ### Tables (ListObjects)
 ```python
-# Definition preserved, cannot create new
+# Full support including creation (WOTAN fix)
 for table in ws.tables.values():
     print(table.name)  # Works
     print(table.ref)   # Works
-# Cannot: create new table from scratch
+
+# NEW: Can create new tables
+table = Table.from_headers(
+    displayName="MyTable",
+    ref="A1:C10",
+    headers=["Name", "Age", "City"],
+    style="TableStyleMedium9"
+)
+ws.add_table(table)
 ```
 
 ---
 
-## Category 4: LOST on Round-Trip (Critical)
-
-### Extension List Content (extLst)
-
-**The biggest problem.** Excel stores modern features in `<extLst>` elements.
-
-```xml
-<!-- What Excel writes -->
-<extLst>
-  <ext uri="{05C60535-1F16-4FD2-B633-F4F36F0B64E0}">
-    <x14:sparklineGroups>
-      <!-- Complex sparkline definition -->
-    </x14:sparklineGroups>
-  </ext>
-</extLst>
-```
-
-```python
-# What openpyxl does
-class Extension(Serialisable):
-    uri = String()  # Only this is kept!
-    # Content inside <ext> is DISCARDED
-```
-
-**Result**:
-- Warning: "Sparkline Group extension is not supported and will be removed"
-- All sparklines gone from saved file
-
-**Affected features**:
-| Extension | GUID | Status |
-|-----------|------|--------|
-| Sparklines | `{05C60535-...}` | LOST |
-| Slicers | `{A8765BA9-...}` | LOST |
-| Timelines | `{7E03D99C-...}` | LOST |
-| Protected ranges (ext) | `{FC87AEE6-...}` | LOST |
-| Ignored errors | `{01252117-...}` | LOST |
-| Web extensions | `{F7C9EE02-...}` | LOST |
-
-### Dynamic Arrays
-
-```xml
-<!-- Excel 365 cell with dynamic array -->
-<c r="A1" cm="1">  <!-- cm="1" marks dynamic array -->
-  <f>_xlfn.UNIQUE(B1:B10)</f>
-</c>
-```
-
-```python
-# openpyxl ignores cm attribute
-cell = ws['A1']
-print(cell.value)  # Formula text preserved
-# BUT: cm attribute not read, metadata.xml not parsed
-# Result: Formula becomes static on save
-```
-
-**What's missing**:
-- `cm` attribute on cells (cell metadata index)
-- `metadata.xml` file handling
-- `futureMetadata` with XLDAPR namespace
-- Spill range operator (`#`) in formulas
-
-### Threaded Comments
-
-```xml
-<!-- Excel 365 uses separate files -->
-xl/threadedComments/threadedComment1.xml
-xl/persons/person.xml
-```
-
-```python
-# openpyxl doesn't read these files at all
-# Only legacy comments (in xl/comments*.xml) are read
-```
-
-**Result**: Comment threads, replies, @mentions - all LOST
+## Category 5: LOST on Round-Trip (Remaining Gap)
 
 ### DrawingML Shapes
 
@@ -244,42 +270,9 @@ warn("DrawingML support is incomplete and limited to charts and images only. "
 - Annotations
 - Grouped objects (except charts/images)
 
-### Rich Data Types
-
-```xml
-<!-- Stocks, Geography, etc. -->
-xl/richData/rdrichvalue.xml
-xl/richData/rdRichValueTypes.xml
-```
-
-**Not parsed at all** - linked data types completely lost.
-
-### Modern Chart Types
-
-Some newer chart types throw errors and are dropped:
-- Waterfall
-- Funnel
-- Treemap
-- Sunburst
-- Box & Whisker
-- Histogram
-- Map charts
-
-### Unknown XML Elements
-
-```python
-# openpyxl/worksheet/_reader.py uses iterparse
-for _, element in it:
-    if tag_name in dispatcher:
-        dispatcher[tag_name](element)
-    # ELSE: Element silently dropped, no fallback
-```
-
-**Any element not in the dispatcher is gone forever.**
-
 ---
 
-## Category 5: Never Read/Written
+## Category 6: Never Read/Written
 
 These elements are listed in code as unimplemented:
 
@@ -291,11 +284,6 @@ These elements are listed in code as unimplemented:
 - webPublishItems (web publishing)
 - smartTags (deprecated smart tags)
 - cellWatches (formula auditing)
-- ignoredErrors (error ignore flags)
-- customProperties (sheet custom props)
-- drawingHF (header/footer drawings)
-- background (sheet background image)
-- phonetic (phonetic text properties)
 ```
 
 ---
@@ -322,87 +310,67 @@ with warnings.catch_warnings(record=True) as w:
 
 | Warning | Impact |
 |---------|--------|
-| "... extension is not supported and will be removed" | Feature LOST |
 | "DrawingML support is incomplete..." | Shapes LOST |
-| "Data Validation extension..." | Some validation rules LOST |
-| "Unknown type ... in cell" | Cell type may not round-trip |
+| Other extension warnings | Usually preserved now |
 
 ---
 
-## Architectural Root Causes
+## Architectural Improvements (WOTAN)
 
-### 1. Serialisable Pattern Drops Unknown
+### 1. Extension Class Now Preserves Content ✅
 
 ```python
-class Serialisable:
+class Extension(Serialisable):
+    uri = String()
+    _content = None  # Raw XML preserved
+
     @classmethod
     def from_tree(cls, node):
-        # Only processes defined descriptors
-        # Unknown children silently ignored
+        obj = cls(uri=node.get('uri'))
+        obj._content = deepcopy(node)  # Keep everything
+        return obj
+
+    def to_tree(self):
+        if self._content is not None:
+            return self._content  # Write back unchanged
 ```
 
-### 2. No Raw XML Storage
-
-There's no mechanism to store raw XML for later reconstruction:
-```python
-# Would need something like:
-class Serialisable:
-    _raw_xml = None  # Store original for unknown elements
-```
-
-### 3. Extension Class Too Simple
+### 2. Unknown Worksheet Elements Preserved ✅
 
 ```python
-# Current - only stores URI
-class Extension(Serialisable):
-    uri = String()
-
-# Needed - stores full content
-class Extension(Serialisable):
-    uri = String()
-    _content = None  # Raw XML element
+# worksheet/_reader.py now preserves unknown elements
+PRESERVE_TAGS = {
+    'sheetCalcPr', 'protectedRanges', 'scenarios',
+    'ignoredErrors', 'customProperties', 'cellWatches',
+    # ... more tags
+}
 ```
 
-### 4. Reader Uses Streaming Without Fallback
+### 3. Cell Metadata Fully Supported ✅
 
 ```python
-# Worksheet reader clears elements as it goes
-element.clear()  # Memory efficient, but data gone
+# Cell class now has metadata support
+class Cell:
+    _cell_metadata_index = None
+
+    @property
+    def cell_metadata_index(self):
+        return self._cell_metadata_index
+
+    @cell_metadata_index.setter
+    def cell_metadata_index(self, value):
+        self._cell_metadata_index = int(value) if value else None
 ```
-
----
-
-## Recommendations for WOTAN
-
-### Phase 0: Stop Losing Data
-
-1. **Modify Extension class** to preserve raw XML content
-2. **Add unknown element storage** to Serialisable base
-3. **Create preservation mode** for readers
-4. **Add round-trip tests** with Excel 365 files
-
-### Phase 1: Measure the Problem
-
-1. Create test files in Excel 365 with each modern feature
-2. Run round-trip and document warnings
-3. Compare input/output XML to catalog losses
-4. Prioritize based on frequency of use
-
-### Phase 2: Incremental Parsing
-
-1. First preserve, then parse
-2. Each feature gets full Python object model
-3. Unknown features still preserved as raw XML
-4. Never lose data we don't understand
 
 ---
 
 ## Summary Table
 
-| Category | Example Features | Status | Action Needed |
-|----------|------------------|--------|---------------|
-| Full Round-Trip | Cells, styles, formulas | Working | None |
-| Pass-Through | Theme, VBA | Working | None |
-| Partial | Comments, pivots | Limited | Enhance |
-| LOST | extLst, dynamic arrays | Broken | Critical fix |
-| Never Handled | OLE, controls | Missing | Evaluate need |
+| Category | Example Features | Status | Notes |
+|----------|------------------|--------|-------|
+| Full Round-Trip | Cells, styles, formulas | ✅ Working | Full Python objects |
+| WOTAN Round-Trip | Dynamic arrays, threads, sparklines | ✅ Working | WOTAN fixes |
+| Pass-Through | Theme, VBA | ✅ Working | Binary blobs |
+| Partial | Comments, pivots, tables | ✅ Enhanced | Full creation support |
+| LOST | DrawingML shapes | ❌ Still broken | Only remaining gap |
+| Never Handled | OLE, controls | N/A | Low priority |

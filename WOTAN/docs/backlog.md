@@ -86,17 +86,17 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 
 **Summary**: Created `openpyxl/packaging/metadata.py` with complete Metadata class hierarchy. Added reading in workbook parser, writing in excel writer with proper relationships and content types. Metadata preserved on round-trip.
 
-### B-DYNARR-02: Add cell metadata attribute support `[NEEDS-SPEC]`
+### B-DYNARR-02: Add cell metadata attribute support `[DONE]`
 
 **Intent**: Add `cm` attribute to cell elements for dynamic array marking.
 
-**Next**: Depends on B-DYNARR-01
+**Completed**: 2024-12-03
 
-**Details**:
-- Modify `openpyxl/cell/_writer.py` to write `cm` attribute
-- Modify cell reader to parse `cm` attribute
-- Add `metadata_index` property to Cell class
-- Link to metadata.xml indices
+**Summary**: Cell metadata index (`cm` attribute) fully implemented:
+- `openpyxl/cell/_writer.py:26-28` writes `cm` attribute
+- `openpyxl/worksheet/_reader.py:231-233` reads `cm` attribute
+- `openpyxl/cell/cell.py:302-319` provides `cell_metadata_index` property
+- Tests in `openpyxl/cell/tests/test_cell.py` and `test_writer.py`
 
 ### B-DYNARR-03: Implement futureMetadata XLDAPR `[NEEDS-SPEC]`
 
@@ -110,16 +110,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 - Parse dynamic array flags
 - Support bi-directional spill tracking
 
-### B-DYNARR-04: Handle spilled range operator `[NEEDS-SPEC]`
+### B-DYNARR-04: Handle spilled range operator `[DONE]`
 
 **Intent**: Parse and preserve the `#` operator in formulas.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Modify `openpyxl/formula/tokenizer.py`
-- `A1#` means "spilled range from A1"
-- Ensure round-trip preservation
+**Summary**: Spilled range operator fully implemented in `openpyxl/formula/tokenizer.py:148-177`. The `#` operator is recognized as a postfix operator on range references (e.g., `A1#` means "spill from A1"). Tests in `openpyxl/formula/tests/test_tokenizer.py::test_parse_spilled_range_operator`.
 
 ---
 
@@ -143,41 +140,43 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 
 ## Priority 2: High Value (Comments & Charts)
 
-### B-COMMENT-01: Implement threaded comments reader `[NEEDS-SPEC]`
+### B-COMMENT-01: Implement threaded comments reader `[DONE]`
 
 **Intent**: Read threaded comments from modern Excel files.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Create `openpyxl/comments/threaded.py`
-- Parse `xl/threadedComments/threadedComment*.xml`
-- Implement `ThreadedComment` class per MS-XLSX spec
-- Handle parent-child comment relationships
+**Summary**: Full threaded comments reader implemented:
+- Created `openpyxl/comments/threaded.py` with ThreadedComment, ThreadedCommentList, Mention classes
+- Reader in `openpyxl/reader/excel.py:281-284` parses threadedComments XML
+- Parent-child relationships tracked via `parentId` attribute
+- Tests in `openpyxl/comments/tests/test_threaded.py`
 
-### B-COMMENT-02: Implement person.xml support `[NEEDS-SPEC]`
+### B-COMMENT-02: Implement person.xml support `[DONE]`
 
 **Intent**: Read and write person data for threaded comments.
 
-**Next**: Depends on B-COMMENT-01
+**Completed**: 2024-12-03
 
-**Details**:
-- Create `openpyxl/comments/person.py`
-- Parse `xl/persons/person.xml`
-- Track authors across workbook
-- Generate new person entries
+**Summary**: Full person support implemented:
+- Created `openpyxl/comments/person.py` with Person, PersonList classes
+- Reader in `openpyxl/reader/excel.py:198-205` parses persons XML
+- Writer in `openpyxl/writer/excel.py:233-240` writes persons XML
+- Workbook.persons property for author management
+- Tests in `openpyxl/comments/tests/test_threaded.py`
 
-### B-COMMENT-03: Implement threaded comments writer `[NEEDS-SPEC]`
+### B-COMMENT-03: Implement threaded comments writer `[DONE]`
 
 **Intent**: Write threaded comments to XLSX files.
 
-**Next**: Depends on B-COMMENT-01, B-COMMENT-02
+**Completed**: 2024-12-03
 
-**Details**:
-- Add content type for threaded comments
-- Write threadedComment*.xml files
-- Maintain legacy comment fallback
-- Generate proper relationships
+**Summary**: Full threaded comments writer implemented:
+- Writer in `openpyxl/writer/excel.py:220-230` writes threadedComments XML
+- Content types and relationships properly generated
+- Legacy comment fallback maintained (legacy comments preserve threaded comment text)
+- Full round-trip verified with real Excel 365 files
+- Tests in `openpyxl/comments/tests/test_threaded.py::TestWorkbookIntegration`
 
 ### B-COMMENT-04: Fix comment formatting preservation `[DONE]`
 
@@ -275,16 +274,17 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 
 **Summary**: Created `openpyxl/pivot/builder.py` with PivotTableConfig and PivotTableBuilder classes. Builder creates TableDefinition and CacheDefinition objects with proper field mappings. Supports row fields, column fields, value fields (with aggregation functions), and filter fields. Fixed issues with CacheSource type parameter and NestedSequence requiring tuples not None.
 
-### B-TABLE-01: Enable table creation `[NEEDS-SPEC]`
+### B-TABLE-01: Enable table creation `[DONE]`
 
 **Intent**: Allow programmatic creation of tables.
 
-**Next**: None assigned
+**Completed**: 2024-12-03
 
-**Details**:
-- Currently read-only
-- Simpler than pivots
-- Need column definition generation
+**Summary**: Table creation fully implemented:
+- `Table.from_headers()` convenience constructor in `openpyxl/worksheet/table.py:296-340`
+- Creates tables with proper column definitions, styles, and auto-filters
+- Full round-trip support verified
+- Tests in `openpyxl/worksheet/tests/test_table.py::TestTable::test_from_headers`
 
 ---
 
@@ -348,8 +348,13 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 | T-PRESERVE-05 | B-PRESERVE-05 | DONE |
 | T-DOC-01-DA | B-DOC-01 | DONE |
 | T-DYNARR-01 | B-DYNARR-01 | DONE |
+| T-DYNARR-02 | B-DYNARR-02 | DONE |
+| T-DYNARR-04 | B-DYNARR-04 | DONE |
 | T-DOC-02 | B-DOC-02 | DONE |
 | T-FUNC-02 | B-FUNC-02 | DONE |
+| T-COMMENT-01 | B-COMMENT-01 | DONE |
+| T-COMMENT-02 | B-COMMENT-02 | DONE |
+| T-COMMENT-03 | B-COMMENT-03 | DONE |
 | T-COMMENT-04 | B-COMMENT-04 | DONE |
 | T-SLICER-01 | B-SLICER-01 | DONE |
 | T-SLICER-02 | B-SLICER-02 | DONE |
@@ -360,4 +365,5 @@ Current warning: "DrawingML support is incomplete... Shapes and drawings will be
 | T-SPARK-02 | B-SPARK-02 | DONE |
 | T-CHART-01-06 | B-CHART-01-06 | DONE |
 | T-PIVOT-01 | B-PIVOT-01 | DONE |
-| T-TEST-01 | B-TEST-01 | BLOCKED |
+| T-TABLE-01 | B-TABLE-01 | DONE |
+| T-TEST-01 | B-TEST-01 | PARTIAL |
