@@ -580,6 +580,34 @@ class TestWorksheetParser:
         assert 'B1' in result_str
 
 
+    def test_unknown_elements_preserved(self, WorkSheetParser):
+        """Test that known but unhandled worksheet elements are preserved"""
+        from openpyxl.xml.functions import tostring
+        parser = WorkSheetParser
+
+        src = b"""
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+            <sheetData/>
+            <sheetCalcPr fullCalcOnLoad="1"/>
+            <ignoredErrors>
+                <ignoredError sqref="A1:B10" numberStoredAsText="1"/>
+            </ignoredErrors>
+        </worksheet>
+        """
+        parser.source = BytesIO(src)
+        for _ in parser.parse():
+            pass
+
+        # Check that unknown elements were preserved
+        assert len(parser.unknown_elements) == 2
+        assert '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetCalcPr' in parser.unknown_elements
+        assert '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}ignoredErrors' in parser.unknown_elements
+
+        # Verify content is preserved
+        calc_elem = parser.unknown_elements['{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetCalcPr']
+        assert calc_elem.get('fullCalcOnLoad') == '1'
+
+
     def test_bad_conditional_format_rule(self, WorkSheetParser, recwarn):
         parser = WorkSheetParser
 

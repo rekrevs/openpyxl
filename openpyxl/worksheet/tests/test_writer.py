@@ -621,6 +621,32 @@ class TestWorksheetWriter:
         assert b'{05C60535-1F16-4FD2-B633-F4F36F0B64E0}' in xml
 
 
+    def test_unknown_elements(self, writer):
+        """Test that preserved unknown elements are written to output"""
+        from lxml.etree import fromstring
+
+        # Create unknown elements
+        calc_src = '<sheetCalcPr xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" fullCalcOnLoad="1"/>'
+        ignored_src = '''<ignoredErrors xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+            <ignoredError sqref="A1:B10" numberStoredAsText="1"/>
+        </ignoredErrors>'''
+
+        writer.ws.unknown_elements = {
+            '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetCalcPr': fromstring(calc_src),
+            '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}ignoredErrors': fromstring(ignored_src),
+        }
+
+        writer.write_unknown_elements('after_data')
+        writer.write_unknown_elements('after_breaks')
+        xml = writer.read()
+
+        # Verify unknown elements are in output
+        assert b'sheetCalcPr' in xml
+        assert b'fullCalcOnLoad' in xml
+        assert b'ignoredErrors' in xml
+        assert b'numberStoredAsText' in xml
+
+
     def test_cleanup(self, writer):
         assert os.path.exists(writer.out) is True
         writer.close()

@@ -23,6 +23,33 @@ from .table import TablePartList
 from openpyxl.cell._writer import write_cell
 
 
+# Tags for unknown elements - used for writing in correct position
+# Order matches ECMA-376 CT_Worksheet sequence
+UNKNOWN_ELEMENT_POSITIONS = {
+    # After sheetData, before protection
+    '{%s}sheetCalcPr' % SHEET_MAIN_NS: 'after_data',
+    # After protection, before scenarios
+    '{%s}protectedRanges' % SHEET_MAIN_NS: 'after_protection',
+    # After autoFilter, before merged cells
+    # Note: sortState excluded - handled as part of autoFilter
+    '{%s}dataConsolidate' % SHEET_MAIN_NS: 'after_filter',
+    # After merged cells, before conditional formatting
+    '{%s}phoneticPr' % SHEET_MAIN_NS: 'after_merge',
+    # After col breaks, before drawing
+    '{%s}customProperties' % SHEET_MAIN_NS: 'after_breaks',
+    '{%s}cellWatches' % SHEET_MAIN_NS: 'after_breaks',
+    '{%s}ignoredErrors' % SHEET_MAIN_NS: 'after_breaks',
+    '{%s}smartTags' % SHEET_MAIN_NS: 'after_breaks',
+    # After drawing, before legacy
+    '{%s}drawing' % SHEET_MAIN_NS: 'after_drawing',
+    # After legacy, before tables
+    '{%s}legacyDrawingHF' % SHEET_MAIN_NS: 'after_legacy',
+    '{%s}picture' % SHEET_MAIN_NS: 'after_legacy',
+    '{%s}oleObjects' % SHEET_MAIN_NS: 'after_legacy',
+    '{%s}controls' % SHEET_MAIN_NS: 'after_legacy',
+    '{%s}webPublishItems' % SHEET_MAIN_NS: 'after_legacy',
+}
+
 ALL_TEMP_FILES = []
 
 @atexit.register
@@ -293,6 +320,21 @@ class WorksheetWriter:
             self.xf.send(extensions.to_tree())
 
 
+    def write_unknown_elements(self, position):
+        """
+        Write preserved unknown elements at the specified position.
+        Position is one of: 'after_data', 'after_protection', 'after_filter',
+        'after_merge', 'after_breaks', 'after_drawing', 'after_legacy'
+        """
+        unknown = self.ws.unknown_elements
+        if not unknown:
+            return
+        for tag, element in unknown.items():
+            elem_position = UNKNOWN_ELEMENT_POSITIONS.get(tag, 'after_legacy')
+            if elem_position == position:
+                self.xf.send(element)
+
+
     def get_stream(self):
         with xmlfile(self.out) as xf:
             with xf.element("worksheet", xmlns=SHEET_MAIN_NS):
@@ -343,10 +385,14 @@ class WorksheetWriter:
         web publishing #
         tables
         """
+        self.write_unknown_elements('after_data')  # sheetCalcPr
         self.write_protection()
+        self.write_unknown_elements('after_protection')  # protectedRanges
         self.write_scenarios()
         self.write_filter()
+        self.write_unknown_elements('after_filter')  # sortState, dataConsolidate, customSheetViews
         self.write_merged_cells()
+        self.write_unknown_elements('after_merge')  # phoneticPr
         self.write_formatting()
         self.write_validations()
         self.write_hyperlinks()
@@ -355,8 +401,11 @@ class WorksheetWriter:
         self.write_page()
         self.write_header()
         self.write_breaks()
+        self.write_unknown_elements('after_breaks')  # customProperties, cellWatches, ignoredErrors, smartTags
         self.write_drawings()
+        self.write_unknown_elements('after_drawing')  # drawingHF
         self.write_legacy()
+        self.write_unknown_elements('after_legacy')  # legacyDrawingHF, picture, oleObjects, controls, webPublishItems
         self.write_tables()
         self.write_extensions()
 

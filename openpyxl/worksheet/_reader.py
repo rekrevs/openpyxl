@@ -1,7 +1,7 @@
 # Copyright (c) 2010-2024 openpyxl
 
 """Reader for a single worksheet."""
-from copy import copy
+from copy import copy, deepcopy
 from warnings import warn
 
 # compatibility imports
@@ -76,6 +76,33 @@ DATA_TAG = '{%s}sheetData' % SHEET_MAIN_NS
 DIMENSION_TAG = '{%s}dimension' % SHEET_MAIN_NS
 CUSTOM_VIEWS_TAG = '{%s}customSheetViews' % SHEET_MAIN_NS
 
+# Tags for elements that should be preserved but are not fully parsed
+# These will be stored as raw XML for round-trip fidelity
+DRAWING_TAG = '{%s}drawing' % SHEET_MAIN_NS
+WORKSHEET_TAG = '{%s}worksheet' % SHEET_MAIN_NS
+COLS_TAG = '{%s}cols' % SHEET_MAIN_NS
+
+# Known worksheet child elements that are NOT currently handled but should be preserved.
+# These are direct children of <worksheet> per ECMA-376 CT_Worksheet schema.
+# Note: We exclude sortState because it also appears as child of autoFilter (which is handled)
+PRESERVE_TAGS = frozenset([
+    '{%s}sheetCalcPr' % SHEET_MAIN_NS,
+    '{%s}protectedRanges' % SHEET_MAIN_NS,
+    # sortState excluded - appears inside autoFilter which handles it
+    '{%s}dataConsolidate' % SHEET_MAIN_NS,
+    '{%s}phoneticPr' % SHEET_MAIN_NS,
+    '{%s}customProperties' % SHEET_MAIN_NS,
+    '{%s}cellWatches' % SHEET_MAIN_NS,
+    '{%s}ignoredErrors' % SHEET_MAIN_NS,
+    '{%s}smartTags' % SHEET_MAIN_NS,
+    DRAWING_TAG,  # drawing - handled via relationships but preserve raw element
+    '{%s}legacyDrawingHF' % SHEET_MAIN_NS,
+    '{%s}picture' % SHEET_MAIN_NS,
+    '{%s}oleObjects' % SHEET_MAIN_NS,
+    '{%s}controls' % SHEET_MAIN_NS,
+    '{%s}webPublishItems' % SHEET_MAIN_NS,
+])
+
 
 def _cast_number(value):
     "Convert numbers as string to an int or float"
@@ -121,6 +148,7 @@ class WorkSheetParser:
         self.col_breaks = ColBreak()
         self.rich_text = rich_text
         self.extensions = None  # ExtensionList for round-trip preservation
+        self.unknown_elements = {}  # Dict of tag -> element for round-trip preservation
 
 
     def parse(self):
@@ -168,6 +196,10 @@ class WorkSheetParser:
                 row = self.parse_row(element)
                 element.clear()
                 yield row
+            elif tag_name in PRESERVE_TAGS:
+                # Preserve known but unhandled worksheet elements for round-trip fidelity
+                self.unknown_elements[tag_name] = deepcopy(element)
+                element.clear()
 
 
     def parse_dimensions(self):
@@ -457,7 +489,7 @@ class WorksheetReader:
                   'HeaderFooter', 'auto_filter', 'data_validations',
                   'sheet_properties', 'views', 'sheet_format',
                   'row_breaks', 'col_breaks', 'scenarios', 'legacy_drawing',
-                  'protection', 'extensions',
+                  'protection', 'extensions', 'unknown_elements',
                   ):
             v = getattr(self.parser, k, None)
             if v is not None:

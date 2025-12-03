@@ -246,6 +246,7 @@ def test_implementation_compatbility(ReadOnlyWorksheet, DummyWorkbook):
                     'data_validations',
                     'extensions',
                     'legacy_drawing',
+                    'unknown_elements',
                     'merged_cells',
                     'page_margins',
                     'page_setup',

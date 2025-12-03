@@ -26,45 +26,21 @@ Work items for bringing openpyxl to full XLSX compatibility.
 
 **Goal**: Before adding new features, stop destroying existing features on round-trip.
 
-### B-PRESERVE-01: Preserve extLst content `[READY]`
+### B-PRESERVE-01: Preserve extLst content `[DONE]`
 
 **Intent**: Stop discarding extension list content. This is the #1 cause of data loss.
 
-**Next**: T-PRESERVE-01
+**Completed**: T-PRESERVE-01 (2024-12-03)
 
-**Details**:
-Currently `openpyxl/descriptors/excel.py` Extension class only stores URI:
-```python
-class Extension(Serialisable):
-    uri = String()  # Content inside <ext> is DISCARDED
-```
+**Summary**: Modified Extension class to preserve raw XML via deepcopy. Sparklines, slicers, timelines now survive round-trip.
 
-Need to:
-- Store raw XML content in Extension class
-- Write back unchanged content on save
-- Still issue warning but PRESERVE the data
-- Affects: sparklines, slicers, timelines, etc.
-
-### B-PRESERVE-02: Preserve unknown worksheet XML elements `[READY]`
+### B-PRESERVE-02: Preserve unknown worksheet XML elements `[DONE]`
 
 **Intent**: Stop dropping unknown elements in worksheet reader.
 
-**Next**: Depends on B-PRESERVE-01
+**Completed**: T-PRESERVE-02 (2024-12-03)
 
-**Details**:
-Currently `openpyxl/worksheet/_reader.py` silently drops unknown elements:
-```python
-for _, element in it:
-    if tag_name in dispatcher:
-        dispatcher[tag_name](element)
-    # ELSE: Element gone forever
-```
-
-Need to:
-- Collect unknown elements during parse
-- Store on worksheet object
-- Write back in correct position
-- Allow future parsing without losing current data
+**Summary**: Added PRESERVE_TAGS for known but unhandled elements (sheetCalcPr, protectedRanges, ignoredErrors, etc.). Elements captured in parse() and written back at correct positions per ECMA-376 schema.
 
 ### B-PRESERVE-03: Add Serialisable raw XML storage `[NEEDS-SPEC]`
 
@@ -464,4 +440,6 @@ Add to `openpyxl/utils/formulas.py`:
 
 | Task ID | Backlog Item | Status |
 |---------|--------------|--------|
-| (none yet) | | |
+| T-PRESERVE-01 | B-PRESERVE-01 | DONE |
+| T-PRESERVE-02 | B-PRESERVE-02 | DONE |
+| T-DOC-01 | Research | DONE |

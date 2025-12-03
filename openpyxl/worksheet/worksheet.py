@@ -143,6 +143,7 @@ class Worksheet(_WorkbookChild):
         self.sheet_format = SheetFormatProperties()
         self.scenarios = ScenarioList()
         self.extensions = None  # ExtensionList for round-trip preservation
+        self.unknown_elements = {}  # Dict of tag -> element for round-trip preservation
 
 
     @property
