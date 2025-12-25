@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "next_id": 6,
+  "tasks": [
+    {
+      "id": "T-0001",
+      "status": "DONE",
+      "summary": "Research XLSX format versioning and compatibility"
+    },
+    {
+      "id": "T-0002",
+      "status": "DONE",
+      "summary": "Preserve extLst content on round-trip"
+    },
+    {
+      "id": "T-0003",
+      "status": "DONE",
+      "summary": "Preserve unknown worksheet XML elements"
+    },
+    {
+      "id": "T-0004",
+      "status": "DONE",
+      "summary": "Create round-trip test suite"
+    },
+    {
+      "id": "T-0005",
+      "status": "DONE",
+      "summary": "Implement metadata.xml infrastructure for dynamic arrays"
+    }
+  ]
+}
