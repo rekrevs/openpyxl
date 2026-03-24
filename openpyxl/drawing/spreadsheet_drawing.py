@@ -258,6 +258,7 @@ class SpreadsheetDrawing(Serialisable):
         self.charts = []
         self.images = []
         self._rels = []
+        self.preserved_anchors = []
 
 
     def __hash__(self):
@@ -268,7 +269,7 @@ class SpreadsheetDrawing(Serialisable):
 
 
     def __bool__(self):
-        return bool(self.charts) or bool(self.images)
+        return bool(self.charts) or bool(self.images) or bool(self.preserved_anchors)
 
 
 
@@ -276,6 +277,8 @@ class SpreadsheetDrawing(Serialisable):
         """
         create required structure and the serialise
         """
+        from copy import deepcopy
+
         anchors = []
         for idx, obj in enumerate(self.charts + self.images, 1):
             anchor = _check_anchor(obj)
@@ -303,6 +306,11 @@ class SpreadsheetDrawing(Serialisable):
 
         tree = self.to_tree()
         tree.set('xmlns', SHEET_DRAWING_NS)
+
+        # Append preserved shape anchors (raw XML elements) to the output
+        for anchor_el in self.preserved_anchors:
+            tree.append(deepcopy(anchor_el))
+
         return tree
 
 

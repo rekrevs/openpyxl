@@ -304,6 +304,7 @@ class ExcelWriter:
         ws._drawing = SpreadsheetDrawing()
         ws._drawing.charts = ws._charts
         ws._drawing.images = ws._images
+        ws._drawing.preserved_anchors = getattr(ws, '_preserved_drawing_anchors', [])
         if self.workbook.write_only:
             if not ws.closed:
                 ws.close()

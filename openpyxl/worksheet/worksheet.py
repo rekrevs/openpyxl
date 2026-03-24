@@ -148,6 +148,7 @@ class Worksheet(_WorkbookChild):
         self.threaded_comments = None  # ThreadedCommentList for modern threaded comments
         self.slicers = None  # SlicerList for pivot table/table slicers
         self.timelines = None  # TimelineList for pivot table date filtering
+        self._preserved_drawing_anchors = []  # Raw XML anchors for shape preservation
 
 
     @property

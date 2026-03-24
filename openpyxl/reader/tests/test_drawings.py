@@ -32,8 +32,11 @@ def test_unsupport_drawing(datadir):
     archive.write("unsupported_drawing.xml", "drawing1.xml")
 
     from ..drawings import find_images
-    charts, images = find_images(archive, "drawing1.xml")
-    assert charts == images == []
+    charts, images, shape_anchors = find_images(archive, "drawing1.xml")
+    assert charts == []
+    assert images == []
+    # Shape anchors containing sp elements are now preserved for round-trip fidelity
+    assert len(shape_anchors) == 2
 
 
 def test_unsupported_image_format(datadir):
@@ -44,4 +47,4 @@ def test_unsupported_image_format(datadir):
 
     from ..drawings import find_images
     images = find_images(archive, path)
-    assert images == ([], [])
+    assert images == ([], [], [])

@@ -111,7 +111,7 @@ class NonVisualDrawingShapeProps(Serialisable):
     txBax = Bool(allow_none=True)
     extLst = Typed(expected_type=OfficeArtExtensionList, allow_none=True)
 
-    __elements__ = ("spLocks", "txBax")
+    __elements__ = ("spLocks",)
 
     def __init__(self,
                  spLocks=None,

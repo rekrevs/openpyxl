@@ -52,7 +52,7 @@
     },
     {
       "id": "T-0009",
-      "status": "READY",
+      "status": "DONE",
       "size": "L",
       "summary": "Preserve DrawingML shapes (textboxes, shapes, SmartArt) on round-trip"
     }

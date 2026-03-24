@@ -153,7 +153,7 @@ class Shape(Serialisable):
     fLocksText = Bool(allow_none=True)
     nvSpPr = Typed(expected_type=ShapeMeta, allow_none=True)
     meta = Alias("nvSpPr")
-    spPr = Typed(expected_type=GraphicalProperties)
+    spPr = Typed(expected_type=GraphicalProperties, allow_none=True)
     graphicalProperties = Alias("spPr")
     style = Typed(expected_type=ShapeStyle, allow_none=True)
     txBody = Typed(expected_type=RichText, allow_none=True)

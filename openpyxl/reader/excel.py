@@ -280,7 +280,7 @@ class ExcelReader:
 
         drawings = rels.find(SpreadsheetDrawing._rel_type)
         for rel in drawings:
-            charts, images = find_images(self.archive, rel.target)
+            charts, images, _shape_anchors = find_images(self.archive, rel.target)
             for c in charts:
                 cs.add_chart(c)
 
@@ -355,11 +355,12 @@ class ExcelReader:
 
             drawings = rels.find(SpreadsheetDrawing._rel_type)
             for rel in drawings:
-                charts, images = find_images(self.archive, rel.target)
+                charts, images, shape_anchors = find_images(self.archive, rel.target)
                 for c in charts:
                     ws.add_chart(c, c.anchor)
                 for im in images:
                     ws.add_image(im, im.anchor)
+                ws._preserved_drawing_anchors.extend(shape_anchors)
 
             pivot_rel = rels.find(TableDefinition.rel_type)
             pivot_caches = self.parser.pivot_caches

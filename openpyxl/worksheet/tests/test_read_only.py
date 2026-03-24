@@ -234,6 +234,7 @@ def test_implementation_compatbility(ReadOnlyWorksheet, DummyWorkbook):
                     '_images',
                     '_parent',
                     '_pivots',
+                    '_preserved_drawing_anchors',
                     '_print_area',
                     '_print_cols',
                     '_print_rows',
