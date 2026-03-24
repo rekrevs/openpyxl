@@ -40,7 +40,7 @@
     },
     {
       "id": "T-0007",
-      "status": "READY",
+      "status": "DONE",
       "size": "S",
       "summary": "Fix lxml 6.x test compatibility in XML security tests"
     }
