@@ -168,13 +168,18 @@ class Manifest(Serialisable):
 
     def _register_mimetypes(self, filenames):
         """
-        Make sure that the mime type for all file extensions is registered
+        Make sure that the mime type for all file extensions is registered.
+        Extensions without a known mime type are skipped (their content type
+        is expected to be registered via an Override entry instead).
         """
         for fn in filenames:
             ext = os.path.splitext(fn)[-1]
             if not ext:
                 continue
-            mime = mimetypes.types_map[True][ext]
+            try:
+                mime = mimetypes.types_map[True][ext]
+            except KeyError:
+                continue
             fe = FileExtension(ext[1:], mime)
             self.Default.append(fe)
 

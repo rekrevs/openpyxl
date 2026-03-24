@@ -70,6 +70,53 @@ from .drawings import find_images
 
 SUPPORTED_FORMATS = ('.xlsx', '.xlsm', '.xltx', '.xltm')
 
+# Archive paths that are intentionally excluded from unknown-part preservation.
+# calcChain.xml is rebuilt by Excel on open, so preserving it can cause issues.
+_EXCLUDED_UNKNOWN_PATHS = {
+    'xl/calcChain.xml',
+}
+
+
+class _TrackingZipFile:
+    """
+    Wrapper around ZipFile that tracks which archive members are accessed.
+
+    This is used during loading to determine which archive members openpyxl
+    consumed, so that unconsumed (unknown) members can be preserved.
+    """
+
+    def __init__(self, archive):
+        self._archive = archive
+        self._accessed = set()
+
+    def read(self, name, *args, **kwargs):
+        self._accessed.add(name)
+        return self._archive.read(name, *args, **kwargs)
+
+    def open(self, name, *args, **kwargs):
+        if isinstance(name, str):
+            self._accessed.add(name)
+        return self._archive.open(name, *args, **kwargs)
+
+    def namelist(self):
+        return self._archive.namelist()
+
+    def close(self):
+        return self._archive.close()
+
+    @property
+    def filename(self):
+        return self._archive.filename
+
+    @property
+    def accessed_paths(self):
+        """Set of archive member paths that were accessed during loading."""
+        return set(self._accessed)
+
+    def __getattr__(self, name):
+        # Delegate any other attribute access to the underlying archive
+        return getattr(self._archive, name)
+
 
 def _validate_archive(filename):
     """
@@ -128,7 +175,8 @@ class ExcelReader:
 
     def __init__(self, fn, read_only=False, keep_vba=KEEP_VBA,
                  data_only=False, keep_links=True, rich_text=False):
-        self.archive = _validate_archive(fn)
+        self._raw_archive = _validate_archive(fn)
+        self.archive = _TrackingZipFile(self._raw_archive)
         self.valid_files = self.archive.namelist()
         self.read_only = read_only
         self.keep_vba = keep_vba
@@ -326,6 +374,59 @@ class ExcelReader:
             ws.sheet_state = sheet.state
 
 
+    def _collect_unknown_parts(self):
+        """
+        Identify archive members that were not consumed during loading and
+        store them on the workbook for preservation during save.
+
+        An archive member is "unknown" if:
+        - It was not accessed (read/opened) during loading
+        - It is not a metadata file ([Content_Types].xml, _rels/.rels)
+        - It is not in the exclusion list (e.g. calcChain.xml)
+        """
+        accessed = self.archive.accessed_paths
+        all_members = set(self.valid_files)
+
+        # Infrastructure files that should never be preserved as "unknown"
+        infrastructure = {
+            ARC_CONTENT_TYPES,   # [Content_Types].xml
+            '_rels/.rels',       # root relationships
+        }
+
+        unknown_paths = all_members - accessed - infrastructure - _EXCLUDED_UNKNOWN_PATHS
+
+        if not unknown_paths:
+            return
+
+        # Build a lookup of content types from the original manifest
+        content_type_map = {}
+        for override in self.package.Override:
+            # PartName has leading /, strip it for comparison with archive paths
+            part_name = override.PartName.lstrip('/')
+            content_type_map[part_name] = override.ContentType
+
+        unknown_parts = []
+        unknown_content_types = []
+
+        for path in sorted(unknown_paths):
+            try:
+                data = self._raw_archive.read(path)
+            except KeyError:
+                continue
+            unknown_parts.append((path, data))
+
+            # Preserve the content type entry if one exists
+            if path in content_type_map:
+                ct = Override(
+                    PartName="/" + path,
+                    ContentType=content_type_map[path]
+                )
+                unknown_content_types.append(ct)
+
+        self.wb._unknown_parts = unknown_parts
+        self.wb._unknown_content_types = unknown_content_types
+
+
     def read(self):
         action = "read manifest"
         try:
@@ -350,7 +451,9 @@ class ExcelReader:
             self.read_worksheets()
             action = "assign names"
             self.parser.assign_names()
+            action = "collect unknown parts"
             if not self.read_only:
+                self._collect_unknown_parts()
                 self.archive.close()
         except ValueError as e:
             raise ValueError(

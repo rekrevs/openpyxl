@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "next_id": 8,
+  "next_id": 10,
   "tasks": [
     {
       "id": "T-0001",
@@ -43,6 +43,18 @@
       "status": "DONE",
       "size": "S",
       "summary": "Fix lxml 6.x test compatibility in XML security tests"
+    },
+    {
+      "id": "T-0008",
+      "status": "DONE",
+      "size": "M",
+      "summary": "Investigate and preserve Python-in-Excel (PY function) cells on round-trip"
+    },
+    {
+      "id": "T-0009",
+      "status": "READY",
+      "size": "L",
+      "summary": "Preserve DrawingML shapes (textboxes, shapes, SmartArt) on round-trip"
     }
   ]
 }

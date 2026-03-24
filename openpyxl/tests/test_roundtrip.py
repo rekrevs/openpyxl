@@ -211,6 +211,254 @@ class TestRoundTrip:
             assert cell.data_type == 'f', f"Cell {coord} lost formula type"
 
 
+class TestUnknownPartPreservation:
+    """Test that unknown archive members survive round-trip."""
+
+    def _create_xlsx_with_unknown_parts(self):
+        """
+        Create an XLSX file that contains unknown archive members.
+        Returns the bytes of the modified XLSX.
+        """
+        from openpyxl import Workbook as WB
+
+        # First create a normal XLSX
+        wb = WB()
+        ws = wb.active
+        ws.title = "Sheet1"
+        ws['A1'] = "Hello"
+        ws['B1'] = 42
+
+        buf = BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+
+        # Now inject unknown parts into the zip
+        original_data = buf.getvalue()
+        new_buf = BytesIO()
+        with ZipFile(BytesIO(original_data), 'r') as zf_in:
+            with ZipFile(new_buf, 'w') as zf_out:
+                # Copy all existing entries
+                for item in zf_in.namelist():
+                    zf_out.writestr(item, zf_in.read(item))
+
+                # Add unknown archive members
+                zf_out.writestr(
+                    'xl/customFeature/data.xml',
+                    b'<?xml version="1.0" encoding="UTF-8"?>\n<customData><item id="1">test</item></customData>'
+                )
+                zf_out.writestr(
+                    'xl/customFeature/settings.xml',
+                    b'<?xml version="1.0" encoding="UTF-8"?>\n<settings><option name="enabled" value="true"/></settings>'
+                )
+                zf_out.writestr(
+                    'xl/customFeature/binary.bin',
+                    b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09'
+                )
+
+                # Also add a content type override for the XML files
+                # Read and patch [Content_Types].xml
+                ct_data = zf_in.read('[Content_Types].xml')
+                ct_tree = etree.fromstring(ct_data)
+                ns = 'http://schemas.openxmlformats.org/package/2006/content-types'
+                etree.SubElement(ct_tree, f'{{{ns}}}Override', {
+                    'PartName': '/xl/customFeature/data.xml',
+                    'ContentType': 'application/vnd.ms-excel.customFeature+xml'
+                })
+                etree.SubElement(ct_tree, f'{{{ns}}}Override', {
+                    'PartName': '/xl/customFeature/settings.xml',
+                    'ContentType': 'application/vnd.ms-excel.customFeatureSettings+xml'
+                })
+
+        # We need to rebuild the zip because [Content_Types].xml was already written
+        # Re-create with the patched content types
+        new_buf2 = BytesIO()
+        with ZipFile(BytesIO(new_buf.getvalue()), 'r') as zf_in:
+            with ZipFile(new_buf2, 'w') as zf_out:
+                for item in zf_in.namelist():
+                    if item == '[Content_Types].xml':
+                        zf_out.writestr(item, etree.tostring(ct_tree, xml_declaration=True, encoding='UTF-8'))
+                    else:
+                        zf_out.writestr(item, zf_in.read(item))
+
+        return new_buf2.getvalue()
+
+    def test_unknown_xml_parts_preserved(self):
+        """Test that unknown XML archive members survive round-trip."""
+        xlsx_data = self._create_xlsx_with_unknown_parts()
+
+        # Verify the unknown parts exist in the original
+        with ZipFile(BytesIO(xlsx_data), 'r') as zf:
+            assert 'xl/customFeature/data.xml' in zf.namelist()
+            assert 'xl/customFeature/settings.xml' in zf.namelist()
+            original_data = zf.read('xl/customFeature/data.xml')
+            original_settings = zf.read('xl/customFeature/settings.xml')
+
+        # Round-trip through openpyxl
+        wb = load_workbook(BytesIO(xlsx_data))
+        output = BytesIO()
+        wb.save(output)
+
+        # Verify the unknown parts survived
+        with ZipFile(BytesIO(output.getvalue()), 'r') as zf:
+            names = zf.namelist()
+            assert 'xl/customFeature/data.xml' in names, \
+                f"Unknown XML part lost during round-trip. Archive contains: {sorted(names)}"
+            assert 'xl/customFeature/settings.xml' in names, \
+                f"Unknown settings XML lost during round-trip. Archive contains: {sorted(names)}"
+
+            # Verify content is identical
+            assert zf.read('xl/customFeature/data.xml') == original_data
+            assert zf.read('xl/customFeature/settings.xml') == original_settings
+
+    def test_unknown_binary_parts_preserved(self):
+        """Test that unknown binary archive members survive round-trip."""
+        xlsx_data = self._create_xlsx_with_unknown_parts()
+
+        with ZipFile(BytesIO(xlsx_data), 'r') as zf:
+            original_bin = zf.read('xl/customFeature/binary.bin')
+
+        # Round-trip
+        wb = load_workbook(BytesIO(xlsx_data))
+        output = BytesIO()
+        wb.save(output)
+
+        with ZipFile(BytesIO(output.getvalue()), 'r') as zf:
+            names = zf.namelist()
+            assert 'xl/customFeature/binary.bin' in names, \
+                f"Unknown binary part lost during round-trip. Archive contains: {sorted(names)}"
+            assert zf.read('xl/customFeature/binary.bin') == original_bin
+
+    def test_unknown_content_types_preserved(self):
+        """Test that content type entries for unknown parts survive round-trip."""
+        xlsx_data = self._create_xlsx_with_unknown_parts()
+
+        # Round-trip
+        wb = load_workbook(BytesIO(xlsx_data))
+        output = BytesIO()
+        wb.save(output)
+
+        # Check [Content_Types].xml for the custom content types
+        with ZipFile(BytesIO(output.getvalue()), 'r') as zf:
+            ct_data = zf.read('[Content_Types].xml')
+            ct_tree = etree.fromstring(ct_data)
+
+        ns = 'http://schemas.openxmlformats.org/package/2006/content-types'
+        overrides = {
+            el.get('PartName'): el.get('ContentType')
+            for el in ct_tree.findall(f'{{{ns}}}Override')
+        }
+
+        assert '/xl/customFeature/data.xml' in overrides, \
+            f"Content type for data.xml not preserved. Overrides: {overrides}"
+        assert overrides['/xl/customFeature/data.xml'] == 'application/vnd.ms-excel.customFeature+xml'
+
+        assert '/xl/customFeature/settings.xml' in overrides, \
+            f"Content type for settings.xml not preserved. Overrides: {overrides}"
+        assert overrides['/xl/customFeature/settings.xml'] == 'application/vnd.ms-excel.customFeatureSettings+xml'
+
+    def test_calcchain_not_preserved(self):
+        """Test that xl/calcChain.xml is NOT preserved (Excel rebuilds it)."""
+        from openpyxl import Workbook as WB
+
+        wb = WB()
+        ws = wb.active
+        ws['A1'] = 1
+        buf = BytesIO()
+        wb.save(buf)
+
+        # Inject a fake calcChain.xml
+        new_buf = BytesIO()
+        with ZipFile(BytesIO(buf.getvalue()), 'r') as zf_in:
+            with ZipFile(new_buf, 'w') as zf_out:
+                for item in zf_in.namelist():
+                    zf_out.writestr(item, zf_in.read(item))
+                zf_out.writestr('xl/calcChain.xml', b'<calcChain/>')
+
+        # Round-trip
+        wb2 = load_workbook(BytesIO(new_buf.getvalue()))
+        output = BytesIO()
+        wb2.save(output)
+
+        with ZipFile(BytesIO(output.getvalue()), 'r') as zf:
+            assert 'xl/calcChain.xml' not in zf.namelist(), \
+                "calcChain.xml should NOT be preserved during round-trip"
+
+    def test_normal_workbook_data_unaffected(self):
+        """Test that normal workbook data is not affected by unknown part preservation."""
+        xlsx_data = self._create_xlsx_with_unknown_parts()
+
+        wb = load_workbook(BytesIO(xlsx_data))
+        output = BytesIO()
+        wb.save(output)
+
+        # Re-load and verify normal content
+        wb2 = load_workbook(BytesIO(output.getvalue()))
+        ws = wb2['Sheet1']
+        assert ws['A1'].value == "Hello"
+        assert ws['B1'].value == 42
+
+    def test_unknown_parts_attribute_exists(self):
+        """Test that _unknown_parts attribute is always present on workbooks."""
+        from openpyxl import Workbook as WB
+
+        # New workbook should have empty _unknown_parts
+        wb = WB()
+        assert hasattr(wb, '_unknown_parts')
+        assert wb._unknown_parts == []
+        assert hasattr(wb, '_unknown_content_types')
+        assert wb._unknown_content_types == []
+
+    def test_double_roundtrip_preserves_unknown_parts(self):
+        """Test that unknown parts survive two round-trips."""
+        xlsx_data = self._create_xlsx_with_unknown_parts()
+
+        # First round-trip
+        wb1 = load_workbook(BytesIO(xlsx_data))
+        buf1 = BytesIO()
+        wb1.save(buf1)
+
+        # Second round-trip
+        wb2 = load_workbook(BytesIO(buf1.getvalue()))
+        buf2 = BytesIO()
+        wb2.save(buf2)
+
+        with ZipFile(BytesIO(buf2.getvalue()), 'r') as zf:
+            names = zf.namelist()
+            assert 'xl/customFeature/data.xml' in names
+            assert 'xl/customFeature/settings.xml' in names
+            assert 'xl/customFeature/binary.bin' in names
+
+    def test_multiple_unknown_parts_from_different_dirs(self):
+        """Test that unknown parts from different directories are preserved."""
+        from openpyxl import Workbook as WB
+
+        wb = WB()
+        ws = wb.active
+        ws['A1'] = 1
+        buf = BytesIO()
+        wb.save(buf)
+
+        # Inject parts in multiple directories
+        new_buf = BytesIO()
+        with ZipFile(BytesIO(buf.getvalue()), 'r') as zf_in:
+            with ZipFile(new_buf, 'w') as zf_out:
+                for item in zf_in.namelist():
+                    zf_out.writestr(item, zf_in.read(item))
+                zf_out.writestr('xl/pyExcel/code.xml', b'<pythonCode/>')
+                zf_out.writestr('xl/namedSheetViews/namedSheetView1.xml', b'<namedSheetViews/>')
+                zf_out.writestr('customXml/item1.xml', b'<custom/>')
+
+        wb2 = load_workbook(BytesIO(new_buf.getvalue()))
+        out = BytesIO()
+        wb2.save(out)
+
+        with ZipFile(BytesIO(out.getvalue()), 'r') as zf:
+            names = zf.namelist()
+            assert 'xl/pyExcel/code.xml' in names
+            assert 'xl/namedSheetViews/namedSheetView1.xml' in names
+            assert 'customXml/item1.xml' in names
+
+
 class TestWotanFiles:
     """Tests for WOTAN-specific test files (modern Excel features)."""
 

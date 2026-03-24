@@ -103,6 +103,7 @@ class ExcelWriter:
         archive.writestr(ARC_WORKBOOK_RELS, writer.write_rels())
 
         self._merge_vba()
+        self._write_unknown_parts()
 
         self.manifest._write(archive, self.workbook)
 
@@ -139,6 +140,30 @@ class ExcelWriter:
                 if ARC_VBA.match(name):
                     self._archive.writestr(name, self.workbook.vba_archive.read(name))
 
+
+    def _write_unknown_parts(self):
+        """
+        Write any unknown archive members that were preserved during loading.
+
+        Unknown parts are archive members from the original file that openpyxl
+        did not consume during reading. They are preserved as binary blobs to
+        support round-trip fidelity for files containing features openpyxl
+        doesn't yet understand (e.g. Python-in-Excel, Power Query, etc.).
+        """
+        wb = self.workbook
+        if not wb._unknown_parts:
+            return
+
+        already_written = set(self._archive.namelist())
+
+        for path, data in wb._unknown_parts:
+            if path not in already_written:
+                self._archive.writestr(path, data)
+
+        for ct_override in wb._unknown_content_types:
+            # Only add content type if not already registered
+            if ct_override.PartName not in self.manifest.filenames:
+                self.manifest.Override.append(ct_override)
 
     def _write_images(self):
         # delegate to object

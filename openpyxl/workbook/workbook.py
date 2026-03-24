@@ -90,6 +90,8 @@ class Workbook:
         self.metadata = None  # Metadata for dynamic arrays, etc.
         self.persons = None  # PersonList for threaded comments authors
         self.rich_data = None  # RichDataManager for stocks, geography data types
+        self._unknown_parts = []  # List of (path, bytes) tuples for unknown archive members
+        self._unknown_content_types = []  # List of Override objects for unknown parts
 
 
     def _setup_styles(self):
