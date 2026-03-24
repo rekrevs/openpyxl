@@ -103,6 +103,16 @@ FORMULAE_365 = (
     "FIELDVALUE", "STOCKHISTORY",
     # Aggregation functions (Excel 365)
     "GROUPBY", "PIVOTBY", "PERCENTOF",
+    # Array reshaping functions (Excel 365, 2022-2023)
+    "TOROW", "TOCOL", "WRAPROWS", "WRAPCOLS",
+    "TAKE", "DROP", "CHOOSEROWS", "CHOOSECOLS",
+    "VSTACK", "HSTACK", "EXPAND",
+    # Regex functions (Excel 365, Dec 2024)
+    "REGEXTEST", "REGEXEXTRACT", "REGEXREPLACE",
+    # Translation functions (Excel 365, Dec 2024)
+    "TRANSLATE", "DETECTLANGUAGE",
+    # Range functions (Excel 365, 2025)
+    "TRIMRANGE",
     # Other modern functions
     "CEILING.MATH", "FLOOR.MATH", "CEILING.PRECISE", "FLOOR.PRECISE",
     "AGGREGATE", "COMBINA", "PERMUTATIONA", "BASE", "DECIMAL",

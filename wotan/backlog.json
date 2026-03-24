@@ -1,31 +1,48 @@
 {
-  "version": "2.0.0",
-  "next_id": 6,
+  "version": "2.1.0",
+  "next_id": 8,
   "tasks": [
     {
       "id": "T-0001",
       "status": "DONE",
+      "size": "M",
       "summary": "Research XLSX format versioning and compatibility"
     },
     {
       "id": "T-0002",
       "status": "DONE",
+      "size": "L",
       "summary": "Preserve extLst content on round-trip"
     },
     {
       "id": "T-0003",
       "status": "DONE",
+      "size": "L",
       "summary": "Preserve unknown worksheet XML elements"
     },
     {
       "id": "T-0004",
       "status": "DONE",
+      "size": "M",
       "summary": "Create round-trip test suite"
     },
     {
       "id": "T-0005",
       "status": "DONE",
+      "size": "L",
       "summary": "Implement metadata.xml infrastructure for dynamic arrays"
+    },
+    {
+      "id": "T-0006",
+      "status": "DONE",
+      "size": "S",
+      "summary": "Add missing Excel 365+ functions to FORMULAE (TOROW, TOCOL, WRAPROWS, WRAPCOLS, TAKE, DROP, CHOOSEROWS, CHOOSECOLS, VSTACK, HSTACK, EXPAND, REGEXTEST, REGEXEXTRACT, REGEXREPLACE, TRANSLATE, DETECTLANGUAGE, TRIMRANGE)"
+    },
+    {
+      "id": "T-0007",
+      "status": "READY",
+      "size": "S",
+      "summary": "Fix lxml 6.x test compatibility in XML security tests"
     }
   ]
 }
