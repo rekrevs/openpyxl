@@ -15,6 +15,7 @@ eggs/
 .tox/
 .coverage
 htmlcov/
+pytest-of-sverker/
 
 # IDE
 .idea/
